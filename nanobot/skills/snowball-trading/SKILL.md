@@ -12,7 +12,7 @@ Follow these instructions to manage stock portfolios via `easytrader` on the Sno
 
 ## Environment Variables
 
-The trader relies strictly on system-passed environment variables to authenticate with Xueqiu (instead of a static `.env` file). These MUST be set in the execution context:
+The trader relies strictly on system-passed environment variables to authenticate with Xueqiu (instead of a static `.env` file). You should prefix the command with `env` or pass them directly when executing. These MUST be set:
 
 | Variable | Description |
 |:---|:---|

@@ -148,6 +148,21 @@ class ChannelManager:
                 logger.info("Matrix channel enabled")
             except ImportError as e:
                 logger.warning("Matrix channel not available: {}", e)
+
+        # HTTP API channel
+        if self.config.channels.http_api.enabled:
+            try:
+                from nanobot.channels.http_api import HttpApiChannel
+                from nanobot.config.loader import get_data_dir
+                self.channels["http_api"] = HttpApiChannel(
+                    self.config.channels.http_api,
+                    self.bus,
+                    workspace=self.config.workspace_path,
+                    cron_store_path=get_data_dir() / "cron" / "jobs.json",
+                )
+                logger.info("HTTP API channel enabled on port {}", self.config.channels.http_api.port)
+            except ImportError as e:
+                logger.warning("HTTP API channel not available: {}", e)
     
     async def _start_channel(self, name: str, channel: BaseChannel) -> None:
         """Start a channel and log any exceptions."""

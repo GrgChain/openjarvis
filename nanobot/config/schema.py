@@ -199,6 +199,16 @@ class MatrixConfig(Base):
     group_allow_from: list[str] = Field(default_factory=list)
     allow_room_mentions: bool = False
 
+class HttpApiConfig(Base):
+    """HTTP API channel configuration."""
+
+    enabled: bool = False
+    host: str = "0.0.0.0"
+    port: int = 18790
+    timeout_s: int = 120        # Max wait for agent response
+    allow_from: list[str] = Field(default_factory=list)  # Allowed sender_ids (empty = allow all)
+
+
 class ChannelsConfig(Base):
     """Configuration for chat channels."""
 
@@ -214,6 +224,7 @@ class ChannelsConfig(Base):
     slack: SlackConfig = Field(default_factory=SlackConfig)
     qq: QQConfig = Field(default_factory=QQConfig)
     matrix: MatrixConfig = Field(default_factory=MatrixConfig)
+    http_api: HttpApiConfig = Field(default_factory=HttpApiConfig)
 
 
 class AgentDefaults(Base):
