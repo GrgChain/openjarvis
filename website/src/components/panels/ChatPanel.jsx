@@ -17,6 +17,7 @@ function getChatId(key) {
 }
 
 function msgText(content) {
+  if (content == null) return ''
   if (typeof content === 'string') return content
   if (Array.isArray(content))
     return content.map(c => typeof c === 'string' ? c : c?.text ?? JSON.stringify(c)).join('')
@@ -31,8 +32,29 @@ function Avatar({ role }) {
   )
 }
 
-function ToolCallBlock({ toolCalls }) {
-  const [open, setOpen] = useState(false)
+function ToolCallItem({ tc }) {
+  const [argsOpen, setArgsOpen] = useState(false)
+  let args = tc.arguments
+  try { args = JSON.stringify(JSON.parse(tc.arguments), null, 2) } catch {}
+  return (
+    <div className="tool-call-item">
+      <div className="tool-call-name">
+        <span className="tool-call-icon">⚙</span>
+        <span>{tc.name}</span>
+        {args && (
+          <button className="tool-call-args-toggle" onClick={() => setArgsOpen(v => !v)}>
+            <span style={{ transform: argsOpen ? 'rotate(90deg)' : '', display: 'inline-block' }}>▶</span>
+            参数
+          </button>
+        )}
+      </div>
+      {argsOpen && args && <pre className="tool-call-args">{args}</pre>}
+    </div>
+  )
+}
+
+function ToolCallBlock({ toolCalls, defaultOpen }) {
+  const [open, setOpen] = useState(defaultOpen ?? true)
   if (!toolCalls?.length) return null
   return (
     <div className="tool-calls">
@@ -43,16 +65,7 @@ function ToolCallBlock({ toolCalls }) {
       </button>
       {open && (
         <div className="tool-calls-list">
-          {toolCalls.map((tc, i) => {
-            let args = tc.arguments
-            try { args = JSON.stringify(JSON.parse(tc.arguments), null, 2) } catch {}
-            return (
-              <div key={i} className="tool-call-item">
-                <div className="tool-call-name">⚙ {tc.name}</div>
-                {args && <pre className="tool-call-args">{args}</pre>}
-              </div>
-            )
-          })}
+          {toolCalls.map((tc, i) => <ToolCallItem key={i} tc={tc} />)}
         </div>
       )}
     </div>
@@ -60,9 +73,10 @@ function ToolCallBlock({ toolCalls }) {
 }
 
 function ToolResultBlock({ msg }) {
-  const [open, setOpen] = useState(false)
   const text = msgText(msg.content)
   const lines = text.split('\n').length
+  const isShort = lines <= 6 && text.length <= 300
+  const [open, setOpen] = useState(isShort)
   const preview = lines > 4 ? text.split('\n').slice(0, 3).join('\n') + '\n...' : text
   return (
     <div className="tool-result">
@@ -100,7 +114,7 @@ function MessageCard({ msg }) {
         )}
       </div>
       <div className="msg-card">
-        {tool_calls && <ToolCallBlock toolCalls={tool_calls} />}
+        {tool_calls && <ToolCallBlock toolCalls={tool_calls} defaultOpen={!text} />}
         {text && (
           role === 'assistant'
             ? <ErrorBoundary><Markdown>{text}</Markdown></ErrorBoundary>

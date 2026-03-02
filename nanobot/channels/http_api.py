@@ -192,7 +192,7 @@ class HttpApiChannel(BaseChannel):
             elif role == "assistant":
                 entry: dict = {
                     "role": "assistant",
-                    "content": m.get("content", ""),
+                    "content": m.get("content") or "",
                     "timestamp": m.get("timestamp"),
                 }
                 tool_calls = m.get("tool_calls")

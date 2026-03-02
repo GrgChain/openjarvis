@@ -278,7 +278,25 @@
   color: var(--accent-h);
   margin-bottom: 4px;
   font-family: monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+.tool-call-icon { flex-shrink: 0; }
+.tool-call-args-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-2);
+  font-size: 10px;
+  padding: 1px 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+}
+.tool-call-args-toggle:hover { color: var(--text-1); border-color: var(--text-2); }
 
 .tool-call-args {
   font-size: 11px;
