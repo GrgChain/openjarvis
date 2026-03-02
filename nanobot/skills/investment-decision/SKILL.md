@@ -55,26 +55,28 @@ Please strictly follow the **TODO List** below to advance the meeting, gradually
 
 ### Output Requirements
 
-Finally, please ensure to output the final decision result in **strict JSON format**, **without any Markdown code block markers** (output JSON string directly):
+Finally, please ensure to output the final decision result as an **Array of JSON objects**, **without any Markdown code block markers** (output JSON string directly). Ensure the result is enclosed in `[]` even if there is only one decision:
 
 ```json
-{
-    "symbol": "Stock Code",
-    "name": "Stock Name",
-    "rating": "BUY / ACCUMULATE / HOLD / REDUCE / SELL",
-    "confidence_score": 8.5,  // 0-10 score
-    "reasoning": "Summary of core buying logic (one sentence)",
-    "risk_factors": ["Risk Point 1", "Risk Point 2"],
-    "operation_plan": {
-        "target_price": 15.50,
-        "entry_range": [14.00, 14.20],
-        "stop_loss": 13.50,
-        "take_profit_updates": "Phased take profit strategy..."
-    },
-    "duration": "Short-term / Mid-term / Long-term"
-}
+[
+    {
+        "symbol": "Stock Code",
+        "name": "Stock Name",
+        "rating": "BUY / ACCUMULATE / HOLD / REDUCE / SELL",
+        "confidence_score": 8.5,  // 0-10 score
+        "reasoning": "Summary of core buying logic (one sentence)",
+        "risk_factors": ["Risk Point 1", "Risk Point 2"],
+        "operation_plan": {
+            "target_price": 15.50,
+            "entry_range": [14.00, 14.20],
+            "stop_loss": 13.50,
+            "take_profit_updates": "Phased take profit strategy..."
+        },
+        "duration": "Short-term / Mid-term / Long-term"
+    }
+]
 ```
 
-After generating the decision result, **save the JSON result to a file**:
-- **Path**: `decisions/decision_<SYMBOL>_<YYYY-MM-DD>.json`
-- **Example**: `decisions/decision_000001_2026-02-11.json`
+After generating the decision result, **save the JSON array to a file**:
+- **Path**: `decisions/investment_decision_<YYYY-MM-DD>.json`
+- **Example**: `decisions/investment_decision_2026-02-11.json`

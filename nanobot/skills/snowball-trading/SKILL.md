@@ -18,6 +18,7 @@ The trader relies strictly on system-passed environment variables to authenticat
 |:---|:---|
 | `XQ_A_TOKEN` | Xueqiu token (Extracted from Browser DevTools → Cookie → `xq_a_token`) |
 | `XQ_PORTFOLIO_CODE` | Portfolio code, e.g., `ZH3587695` |
+| `XQ_INITIAL_ASSETS` | Initial assets for the simulated portfolio (Default: `1000000`) |
 
 ## Execution Core
 

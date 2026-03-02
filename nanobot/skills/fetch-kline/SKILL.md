@@ -1,6 +1,6 @@
 ---
 name: fetch-kline
-description: Use when the user requests to fetch, download, or sync historical daily K-line (candlestick) data for Chinese stocks (A-shares) using the Tushare API. Supports incremental updates and filtering out specific boards (e.g., ChiNext/gem, STAR market).
+description: Use when the user requests to fetch, download, or sync historical daily K-line (candlestick) data for Chinese stocks (A-shares) using the Tushare API (with automatic fallback to AKShare). Supports incremental updates and filtering out specific boards (e.g., ChiNext/gem, STAR market).
 ---
 
 # Fetch Kline Data
@@ -9,11 +9,16 @@ Follow these instructions to fetch daily K-line data for Chinese stocks.
 
 ## Execute Fetch Script
 
-Run the `scripts/fetch_kline.py` script to perform the data fetching. Ensure the `TUSHARE_TOKEN` environment variable is set.
+Run the `scripts/fetch_kline.py` script to perform the data fetching. 
+
+**Authentication & Fallback Mechanism:**
+- The script prioritizes using the **Tushare API** if the `TUSHARE_TOKEN` environment variable is set.
+- If no token is provided, or if Tushare API limits are reached, the script will **automatically fallback to using AKShare** (which is free and does not require a token).
+- A robust retry mechanism is included to handle potential connection drops from AKShare data sources.
 
 ### Options
 
-- `--start`: Start date (YYYYMMDD) or 'today'. Default: `20200101`
+- `--start`: Start date (YYYYMMDD) or 'today'. Default: `20250101`
 - `--end`: End date (YYYYMMDD) or 'today'. Default: `today`
 - `--exclude-boards`: Space-separated list of boards to exclude (`gem`, `star`, `bj`). Default: None
 - `--out`: Output directory for the generated CSV files. Default: `kline_data`

@@ -13,7 +13,32 @@ import os
 
 import pandas as pd
 import tushare as ts
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from tqdm import tqdm
+
+# --------------------------- Global Requests Retry Config --------------------------- #
+# AKShare uses requests under the hood, this helps prevent RemoteDisconnected errors
+session = requests.Session()
+# Configure robust retries: 10 connect retries, 10 read retries, with exponential backoff
+retry = Retry(
+    total=10,
+    connect=10, 
+    read=10,
+    backoff_factor=1,
+    status_forcelist=[413, 429, 500, 502, 503, 504]
+)
+adapter = HTTPAdapter(max_retries=retry)
+session.mount('http://', adapter)
+session.mount('https://', adapter)
+
+# Monkeypatch requests.get to use our session with retries for AKShare
+_original_get = requests.get
+def _session_get(url, **kwargs):
+    return session.get(url, **kwargs)
+requests.get = _session_get
+requests.post = session.post
 
 # --------------------------- Warning Suppression --------------------------- #
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -36,15 +61,19 @@ class DataFetcher:
         if not api_token:
             api_token = os.environ.get("TUSHARE_TOKEN")
         
-        if not api_token:
-            raise ValueError("Please set TUSHARE_TOKEN environment variable or pass token.")
-            
         # Configure Proxy if needed (from original code)
         os.environ["NO_PROXY"] = "api.waditu.com,.waditu.com,waditu.com"
         os.environ["no_proxy"] = os.environ["NO_PROXY"]
         
-        ts.set_token(api_token)
-        self.pro = ts.pro_api()
+        self.pro = None
+        if api_token:
+            try:
+                ts.set_token(api_token)
+                self.pro = ts.pro_api()
+            except Exception as e:
+                print(f"Failed to initialize Tushare, will use AKShare fallback: {e}")
+        else:
+            print("TUSHARE_TOKEN not provided, using AKShare for data fetching.")
 
     @staticmethod
     def _to_ts_code(code: str) -> str:
@@ -68,19 +97,58 @@ class DataFetcher:
 
     def get_kline(self, code: str, start: str, end: str) -> pd.DataFrame:
         ts_code = self._to_ts_code(code)
-        try:
-            df = ts.pro_bar(
-                ts_code=ts_code,
-                adj="qfq",
-                start_date=start,
-                end_date=end,
-                freq="D",
-                api=self.pro
-            )
-        except Exception as e:
-            if self._looks_like_ip_ban(e):
-                raise RateLimitError(str(e)) from e
-            raise
+        df = None
+        error = None
+        
+        # Try Tushare first if we have a token
+        if getattr(self, "pro", None):
+            try:
+                df = ts.pro_bar(
+                    ts_code=ts_code,
+                    adj="qfq",
+                    start_date=start,
+                    end_date=end,
+                    freq="D",
+                    api=self.pro
+                )
+            except Exception as e:
+                if self._looks_like_ip_ban(e):
+                    raise RateLimitError(str(e)) from e
+                error = e
+                # Fallback to AKShare
+
+        # Fallback to AKShare
+        if df is None:
+            try:
+                import akshare as ak
+                # AKShare requires symbol without suffix, e.g. "000001" instead of "000001.SZ"
+                # but with board prefixes like sh600000 for some interfaces? 
+                # stock_zh_a_hist just takes 6 digit symbol
+                df = ak.stock_zh_a_hist(
+                    symbol=code.zfill(6),
+                    period="daily",
+                    start_date=start,
+                    end_date=end,
+                    adjust="qfq"
+                )
+                if df is not None and not df.empty:
+                    # Rename AKShare columns to match Tushare output format
+                    # AKShare: 日期, 开盘, 收盘, 最高, 最低, 成交量, 成交额, 振幅, 涨跌幅, 涨跌额, 换手率
+                    df = df.rename(columns={
+                        "日期": "trade_date",
+                        "开盘": "open",
+                        "收盘": "close",
+                        "最高": "high",
+                        "最低": "low",
+                        "成交量": "vol"
+                    })
+                    # Format date to match Tushare's YYYYMMDD string format before processing further
+                    df["trade_date"] = pd.to_datetime(df["trade_date"]).dt.strftime("%Y%m%d")
+            except Exception as e:
+                print(f"AKShare fallback failed for {code}: {e}")
+                if error: 
+                    raise error
+                raise e
 
         if df is None or df.empty:
             return pd.DataFrame()
@@ -132,8 +200,8 @@ class DataFetcher:
                 print(f"{code} is up to date ({last_date.date()}).")
                 return
 
-        # Retry Loop
-        for attempt in range(1, 4):
+        # Retry Loop: Up to 5 attempts for robustness
+        for attempt in range(1, 6):
             try:
                 new_df = self.get_kline(code, fetch_start, end)
                 
@@ -154,16 +222,28 @@ class DataFetcher:
                     final_df.to_csv(csv_path, index=False)
                 break
             except Exception as e:
+                msg = str(e).lower()
                 is_ban = self._looks_like_ip_ban(e)
-                if is_ban:
-                    print(f"{code} attempt {attempt}: Suspected BAN. Sleeping {COOLDOWN_SECS}s")
-                    self._cool_sleep(COOLDOWN_SECS)
+                
+                # Check for critical errors that shouldn't be retried
+                if "no_such_code" in msg or "invalid" in msg:
+                    print(f"{code}: Invalid code or no data available. Skipping.")
+                    break
+                    
+                if is_ban or "ssl" in msg or "max retries exceeded" in msg or "connection" in msg:
+                    # Exponential backoff for connection/ban issues
+                    wait_s = COOLDOWN_SECS if is_ban else (5 * (2 ** (attempt - 1)))
+                    print(f"[{attempt}/5] {code} Connect/Ban issue. Sleep {wait_s}s. {e}")
+                    if is_ban:
+                        self._cool_sleep(wait_s)
+                    else:
+                        time.sleep(wait_s)
                 else:
-                    wait_s = 15 * attempt
-                    print(f"{code} attempt {attempt} failed: {e}. Retry in {wait_s}s")
+                    wait_s = 10 * attempt
+                    print(f"[{attempt}/5] {code} failed: {e}. Retry in {wait_s}s")
                     time.sleep(wait_s)
         else:
-            print(f"{code} failed after 3 attempts.")
+            print(f"[{code}] Failed permanently after 5 attempts.")
 
 
 # --------------------------- StockList Logic --------------------------- #
@@ -242,7 +322,7 @@ def run_job(args, fetcher):
 def main():
 
     parser = argparse.ArgumentParser(description="Tushare Daily K-Line Scraper (Incremental)")
-    parser.add_argument("--start", default="20200101", help="YYYYMMDD or 'today'")
+    parser.add_argument("--start", default="20250101", help="YYYYMMDD or 'today'")
     parser.add_argument("--end", default="today", help="YYYYMMDD or 'today'")
     parser.add_argument("--exclude-boards", nargs="*", default=[], choices=["gem", "star", "bj"])
     parser.add_argument("--out", default="kline_data")

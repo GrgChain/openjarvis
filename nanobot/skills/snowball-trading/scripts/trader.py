@@ -32,7 +32,14 @@ class SnowballTrader:
         trader.adjust("000001", weight=10)
     """
 
-    def __init__(self, initial_assets: float = 1_000_000):
+    def __init__(self, initial_assets: float = None):
+        _load_env_file()
+        if initial_assets is None:
+            raw_assets = os.getenv("XQ_INITIAL_ASSETS", "1000000")
+            try:
+                initial_assets = float(raw_assets)
+            except ValueError:
+                initial_assets = 1_000_000.0
         token = os.getenv("XQ_A_TOKEN", "")
         portfolio_code = os.getenv("XQ_PORTFOLIO_CODE", "")
 

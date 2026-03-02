@@ -1,0 +1,30 @@
+/* ── 3-column app layout ──────────────────────────────────────────────────── */
+.app-three-col {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Shared panel header (used in chat history header) ───────────────────── */
+.panel-header {
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Spinner pulse */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}

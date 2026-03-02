@@ -1,0 +1,135 @@
+/* ── Crons panel ─────────────────────────────────────────────────────────── */
+.crons-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.crons-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.crons-table th {
+  text-align: left;
+  padding: 10px 14px;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.crons-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  vertical-align: middle;
+}
+
+.crons-table tr:last-child td { border-bottom: none; }
+
+.crons-table tbody tr { transition: background 0.1s; }
+.crons-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.cron-name { font-weight: 600; color: var(--text); }
+
+.cron-schedule {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-h);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  padding: 2px 7px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.cron-status { font-size: 12px; font-weight: 700; }
+.cron-status.ok      { color: var(--success); }
+.cron-status.error   { color: var(--danger); }
+.cron-status.pending { color: var(--muted); }
+
+.cron-time {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.crons-empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 60px 0;
+  font-size: 13px;
+}
+
+/* ── Shared: Spinner ─────────────────────────────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+
+.spinner.sm { width: 14px; height: 14px; }
+.spinner.lg { width: 34px; height: 34px; border-width: 3px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+}
+
+/* ── Shared: Error banner ────────────────────────────────────────────────── */
+.error-banner {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-banner-icon { font-size: 14px; flex-shrink: 0; }
+
+/* ── Shared: Badge ───────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.badge.green {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+.badge.red {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+}
+.badge.blue {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent-h);
+}
+.badge.gray {
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: var(--muted);
+}

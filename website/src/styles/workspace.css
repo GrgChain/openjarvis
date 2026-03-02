@@ -1,0 +1,73 @@
+/* ── Workspace panel ─────────────────────────────────────────────────────── */
+.workspace-tree {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-node { display: flex; flex-direction: column; }
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  user-select: none;
+  transition: background 0.1s;
+  min-height: 26px;
+}
+
+.tree-row:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.tree-row[data-dir="true"] { cursor: pointer; }
+.tree-row[data-dir="false"] { cursor: default; }
+
+.tree-indent { display: inline-block; width: 14px; flex-shrink: 0; }
+
+.tree-toggle {
+  width: 14px;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 9px;
+  text-align: center;
+  transition: transform 0.15s;
+}
+
+.tree-icon {
+  flex-shrink: 0;
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+}
+
+.tree-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-name.dir  { color: var(--accent-h); font-weight: 600; }
+.tree-name.file { color: var(--text-2); }
+
+.tree-info {
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+  padding-right: 4px;
+  font-family: inherit;
+}
+
+.tree-children {
+  border-left: 1px solid var(--border);
+  margin-left: 18px;
+}
+
+.workspace-empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 60px 0;
+  font-size: 13px;
+}

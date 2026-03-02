@@ -57,6 +57,7 @@ skills = [
     "ta>=0.11.0,<1.0.0",
     "tqdm>=4.66.0,<5.0.0",
     "tushare>=1.4.0,<2.0.0",
+    "xtquant",
 ]
 matrix = [
     "matrix-nio[e2e]>=0.25.2",
