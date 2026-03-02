@@ -13,7 +13,7 @@ push: build
 	docker tag $(IMAGE_NAME) $(REMOTE_IMAGE)
 	docker push $(REMOTE_IMAGE)
 
-up:
+up: build
 	docker-compose -f $(COMPOSE_FILE) up -d
 
 down:

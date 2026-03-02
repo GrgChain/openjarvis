@@ -1,7 +1,5 @@
 x-common-config: &common-config
-  build:
-    context: ..
-    dockerfile: openjarvis/Dockerfile_openjarvis
+  image: openjarvis:latest
   volumes:
     - ~/.nanobot:/root/.nanobot
   env_file:
