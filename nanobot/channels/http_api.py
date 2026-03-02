@@ -45,6 +45,38 @@ class HttpApiChannel(BaseChannel):
         app.router.add_get("/skills", self._handle_skills_list)
         app.router.add_get("/crons", self._handle_crons_list)
 
+        # Serve frontend website if available
+        # Find website/dist path relative to the nanobot deployment
+        # In docker this will be /app/website/dist
+        current_dir = Path(__file__).parent
+        # Try to find the openjarvis root
+        root_dir = current_dir.parent.parent.parent
+        web_dist = root_dir / "website" / "dist"
+        
+        # Or check if we are already in /app (docker)
+        if not web_dist.exists() and Path("/app/website/dist").exists():
+            web_dist = Path("/app/website/dist")
+            
+        if web_dist.exists() and web_dist.is_dir():
+            logger.info("Website UI found at {}, serving on /", web_dist)
+            app.router.add_static("/assets", str(web_dist / "assets"), name="assets")
+            # For Vite we also might have other static files in public
+            
+            # Catch-all for SPA routing (returns index.html)
+            async def index_handler(request: web.Request) -> web.Response:
+                # If requesting a specific file that might exist but isn't in /assets (e.g. favicon.ico)
+                file_path = web_dist / request.path.lstrip("/")
+                if request.path != "/" and file_path.exists() and file_path.is_file():
+                    return web.FileResponse(file_path)
+                return web.FileResponse(web_dist / "index.html")
+
+            # Route for exactly "/"
+            app.router.add_get("/", index_handler)
+            # Route for all other paths (the regex /{path:.*} catches them)
+            app.router.add_get("/{path:.*}", index_handler)
+        else:
+            logger.debug("Website UI not found at {}, UI will not be served", web_dist)
+
         self._runner = web.AppRunner(app)
         await self._runner.setup()
         site = web.TCPSite(self._runner, self.config.host, self.config.port)
