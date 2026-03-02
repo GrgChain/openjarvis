@@ -180,15 +180,40 @@ class HttpApiChannel(BaseChannel):
         if session is None:
             return web.json_response({"error": "session not found"}, status=404)
 
-        messages = [
-            {
-                "role": m.get("role"),
-                "content": m.get("content", ""),
-                "timestamp": m.get("timestamp"),
-            }
-            for m in session.messages
-            if m.get("role") in ("user", "assistant")
-        ]
+        messages = []
+        for m in session.messages:
+            role = m.get("role")
+            if role == "user":
+                messages.append({
+                    "role": "user",
+                    "content": m.get("content", ""),
+                    "timestamp": m.get("timestamp"),
+                })
+            elif role == "assistant":
+                entry: dict = {
+                    "role": "assistant",
+                    "content": m.get("content", ""),
+                    "timestamp": m.get("timestamp"),
+                }
+                tool_calls = m.get("tool_calls")
+                if tool_calls:
+                    entry["tool_calls"] = [
+                        {
+                            "id": tc.get("id"),
+                            "name": tc.get("function", {}).get("name"),
+                            "arguments": tc.get("function", {}).get("arguments"),
+                        }
+                        for tc in tool_calls
+                    ]
+                messages.append(entry)
+            elif role == "tool":
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": m.get("tool_call_id"),
+                    "name": m.get("name"),
+                    "content": m.get("content", ""),
+                    "timestamp": m.get("timestamp"),
+                })
 
         return web.json_response({
             "key": key,

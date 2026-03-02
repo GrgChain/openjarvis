@@ -31,9 +31,63 @@ function Avatar({ role }) {
   )
 }
 
+function ToolCallBlock({ toolCalls }) {
+  const [open, setOpen] = useState(false)
+  if (!toolCalls?.length) return null
+  return (
+    <div className="tool-calls">
+      <button className="tool-calls-toggle" onClick={() => setOpen(v => !v)}>
+        <span className="tool-calls-chevron" style={{ transform: open ? 'rotate(90deg)' : '' }}>▶</span>
+        <span className="tool-calls-icon">⚙</span>
+        <span>使用了 {toolCalls.length} 个工具</span>
+      </button>
+      {open && (
+        <div className="tool-calls-list">
+          {toolCalls.map((tc, i) => {
+            let args = tc.arguments
+            try { args = JSON.stringify(JSON.parse(tc.arguments), null, 2) } catch {}
+            return (
+              <div key={i} className="tool-call-item">
+                <div className="tool-call-name">⚙ {tc.name}</div>
+                {args && <pre className="tool-call-args">{args}</pre>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ToolResultBlock({ msg }) {
+  const [open, setOpen] = useState(false)
+  const text = msgText(msg.content)
+  const lines = text.split('\n').length
+  const preview = lines > 4 ? text.split('\n').slice(0, 3).join('\n') + '\n...' : text
+  return (
+    <div className="tool-result">
+      <button className="tool-result-toggle" onClick={() => setOpen(v => !v)}>
+        <span className="tool-result-chevron" style={{ transform: open ? 'rotate(90deg)' : '' }}>▶</span>
+        <span className="tool-result-icon">📤</span>
+        <span className="tool-result-name">{msg.name}</span>
+        <span className="tool-result-lines">{lines} 行</span>
+      </button>
+      {open
+        ? <pre className="tool-result-content">{text}</pre>
+        : <pre className="tool-result-content tool-result-preview">{preview}</pre>
+      }
+    </div>
+  )
+}
+
 function MessageCard({ msg }) {
-  const { role, content, ts } = msg
+  const { role, content, ts, tool_calls } = msg
   const text = msgText(content)
+
+  if (role === 'tool') {
+    return <ToolResultBlock msg={msg} />
+  }
+
   return (
     <div className={`msg-group msg-group-${role}`}>
       <div className="msg-meta">
@@ -46,10 +100,12 @@ function MessageCard({ msg }) {
         )}
       </div>
       <div className="msg-card">
-        {role === 'assistant'
-          ? <ErrorBoundary><Markdown>{text}</Markdown></ErrorBoundary>
-          : <div className="msg-plain">{text}</div>
-        }
+        {tool_calls && <ToolCallBlock toolCalls={tool_calls} />}
+        {text && (
+          role === 'assistant'
+            ? <ErrorBoundary><Markdown>{text}</Markdown></ErrorBoundary>
+            : <div className="msg-plain">{text}</div>
+        )}
       </div>
     </div>
   )
@@ -116,12 +172,15 @@ export function ChatPanel({ selectedKey, onSessionsRefresh }) {
     }
     setSending(true)
     try {
-      const data = await api.chat(content, chatId)
-      const assistantMsg = { role: 'assistant', content: data.content, ts: new Date() }
+      await api.chat(content, chatId)
+      // Reload full session to get all tool call messages
+      const sessionKey = isWeb ? HTTP_API_PREFIX + chatId : selectedKey
+      const d = await api.session(sessionKey)
+      const msgs = d.messages.map(m => ({ ...m, ts: m.timestamp }))
       if (isWeb) {
-        setWebMessages(prev => [...prev, assistantMsg])
+        setWebMessages(msgs)
       } else {
-        setHistoryMsgs(prev => [...prev, assistantMsg])
+        setHistoryMsgs(msgs)
       }
       onSessionsRefresh?.()
     } catch (err) {
@@ -130,7 +189,7 @@ export function ChatPanel({ selectedKey, onSessionsRefresh }) {
       setSending(false)
       textareaRef.current?.focus()
     }
-  }, [input, sending, chatId, isWeb, onSessionsRefresh])
+  }, [input, sending, chatId, isWeb, selectedKey, onSessionsRefresh])
 
   const handleKeyDown = e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
