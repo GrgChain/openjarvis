@@ -53,7 +53,6 @@ export default function Login() {
     const labels: Record<string, string> = {
       zh: "中文",
       en: "English",
-      ja: "日本語",
     };
     return labels[i18n.language] || "中文";
   };
@@ -79,9 +78,6 @@ export default function Login() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => changeLanguage("en")}>
               English
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => changeLanguage("ja")}>
-              日本語
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -11,11 +11,13 @@ import {
   type CronSchedule,
 } from "../hooks/useCron";
 import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Switch } from "../components/ui/switch";
 import { Textarea } from "../components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "../components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -34,9 +36,25 @@ import {
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { Skeleton } from "../components/ui/skeleton";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { formatDate } from "../lib/utils";
 
-const defaultSchedule: CronSchedule = { minute: "*", hour: "*", day: "*", month: "*", weekday: "*" };
+function formatMs(ms: number | null | undefined): string {
+  if (!ms) return "-";
+  return new Date(ms).toLocaleString();
+}
+
+function exprFromSchedule(s: CronSchedule): string {
+  if (s.kind === "cron" && s.expr) return s.expr;
+  if (s.kind === "every" && s.every_ms) return `every ${Math.round(s.every_ms / 1000)}s`;
+  if (s.kind === "at" && s.at_ms) return `at ${formatMs(s.at_ms)}`;
+  return "-";
+}
+
+/** Parse a 5-field cron expression into parts, return null if invalid */
+function parseCronExpr(expr: string): { minute: string; hour: string; day: string; month: string; weekday: string } | null {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5) return null;
+  return { minute: parts[0], hour: parts[1], day: parts[2], month: parts[3], weekday: parts[4] };
+}
 
 function CronForm({
   initial,
@@ -49,7 +67,21 @@ function CronForm({
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState(initial?.name ?? "");
-  const [sched, setSched] = useState<CronSchedule>(initial?.schedule ?? defaultSchedule);
+  const [kind, setKind] = useState<CronSchedule["kind"]>(initial?.schedule.kind ?? "cron");
+
+  // cron expr fields
+  const initParts = initial?.schedule.expr ? parseCronExpr(initial.schedule.expr) : null;
+  const [minute, setMinute] = useState(initParts?.minute ?? "*");
+  const [hour, setHour] = useState(initParts?.hour ?? "*");
+  const [day, setDay] = useState(initParts?.day ?? "*");
+  const [month, setMonth] = useState(initParts?.month ?? "*");
+  const [weekday, setWeekday] = useState(initParts?.weekday ?? "*");
+
+  // every interval
+  const [everySeconds, setEverySeconds] = useState(
+    initial?.schedule.every_ms ? String(Math.round(initial.schedule.every_ms / 1000)) : "60"
+  );
+
   const [message, setMessage] = useState(initial?.payload.message ?? "");
   const [deliver, setDeliver] = useState(initial?.payload.deliver ?? false);
   const [channel, setChannel] = useState(initial?.payload.channel ?? "");
@@ -57,21 +89,29 @@ function CronForm({
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
 
   const handleSave = () => {
+    let schedule: CronSchedule;
+    if (kind === "cron") {
+      schedule = { kind: "cron", expr: `${minute} ${hour} ${day} ${month} ${weekday}` };
+    } else if (kind === "every") {
+      schedule = { kind: "every", every_ms: Number(everySeconds) * 1000 };
+    } else {
+      schedule = { kind: "at", at_ms: Date.now() + 60000 };
+    }
     onSave({
       name,
       enabled,
-      schedule: sched,
-      payload: { message, deliver, channel, to },
+      schedule,
+      payload: { message, deliver, channel: channel || undefined, to: to || undefined },
     });
   };
 
-  const schedField = (f: keyof CronSchedule) => (
+  const cronField = (label: string, value: string, onChange: (v: string) => void) => (
     <div className="space-y-1">
-      <Label className="text-xs">{t(`cron.${f}`)}</Label>
+      <Label className="text-xs">{label}</Label>
       <Input
         className="font-mono text-sm h-8"
-        value={sched[f]}
-        onChange={(e) => setSched((p) => ({ ...p, [f]: e.target.value }))}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
       />
     </div>
   );
@@ -83,15 +123,46 @@ function CronForm({
           <Label>{t("cron.name")}</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-        <div>
-          <Label className="mb-2 block">{t("cron.schedule")}</Label>
-          <div className="grid grid-cols-5 gap-2">
-            {(["minute", "hour", "day", "month", "weekday"] as (keyof CronSchedule)[]).map((f) => schedField(f))}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Current: <code className="font-mono">{`${sched.minute} ${sched.hour} ${sched.day} ${sched.month} ${sched.weekday}`}</code>
-          </p>
+
+        <div className="space-y-2">
+          <Label>{t("cron.schedule")}</Label>
+          <Select value={kind} onValueChange={(v) => setKind(v as CronSchedule["kind"])}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cron">Cron</SelectItem>
+              <SelectItem value="every">Every (interval)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {kind === "cron" && (
+            <>
+              <div className="grid grid-cols-5 gap-2">
+                {cronField(t("cron.minute"), minute, setMinute)}
+                {cronField(t("cron.hour"), hour, setHour)}
+                {cronField(t("cron.day"), day, setDay)}
+                {cronField(t("cron.month"), month, setMonth)}
+                {cronField(t("cron.weekday"), weekday, setWeekday)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <code className="font-mono">{`${minute} ${hour} ${day} ${month} ${weekday}`}</code>
+              </p>
+            </>
+          )}
+
+          {kind === "every" && (
+            <div className="space-y-1">
+              <Label className="text-xs">{t("cron.intervalSeconds")}</Label>
+              <Input
+                type="number"
+                className="font-mono text-sm h-8 max-w-[200px]"
+                value={everySeconds}
+                onChange={(e) => setEverySeconds(e.target.value)}
+                min={1}
+              />
+            </div>
+          )}
         </div>
+
         <div className="space-y-1">
           <Label>{t("cron.message")}</Label>
           <Textarea
@@ -169,54 +240,45 @@ export default function CronJobs() {
                 <TableHead>{t("cron.name")}</TableHead>
                 <TableHead>{t("cron.schedule")}</TableHead>
                 <TableHead>{t("cron.nextRun")}</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-28 text-right">Actions</TableHead>
+                <TableHead className="w-24 text-center">{t("cron.enabled")}</TableHead>
+                <TableHead className="w-20 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {jobs?.map((j) => {
-                const schedStr = `${j.schedule.minute} ${j.schedule.hour} ${j.schedule.day} ${j.schedule.month} ${j.schedule.weekday}`;
-                return (
-                  <TableRow key={j.id}>
-                    <TableCell className="font-medium">{j.name}</TableCell>
-                    <TableCell className="font-mono text-xs">{schedStr}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {j.next_run ? formatDate(j.next_run) : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={j.enabled ? "default" : "secondary"}>
-                        {j.enabled ? t("cron.enabled") : t("cron.disabled")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => toggle.mutate({ id: j.id, enabled: !j.enabled })}
-                      >
-                        {j.enabled ? t("cron.disable") : t("cron.enable")}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => { setEditTarget(j); setMode("edit"); }}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => setDelTarget(j.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {jobs?.map((j) => (
+                <TableRow key={j.id}>
+                  <TableCell className="font-medium">{j.name}</TableCell>
+                  <TableCell className="font-mono text-xs">{exprFromSchedule(j.schedule)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {formatMs(j.state.next_run_at_ms)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch
+                      checked={j.enabled}
+                      disabled={toggle.isPending}
+                      onCheckedChange={(enabled) => toggle.mutate({ id: j.id, job: j, enabled })}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right space-x-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => { setEditTarget(j); setMode("edit"); }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive"
+                      onClick={() => setDelTarget(j.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
               {(!jobs || jobs.length === 0) && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">{t("common.noData")}</TableCell>

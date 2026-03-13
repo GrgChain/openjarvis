@@ -3,18 +3,25 @@ import { toast } from "sonner";
 import api from "../lib/api";
 
 export interface CronSchedule {
-  minute: string;
-  hour: string;
-  day: string;
-  month: string;
-  weekday: string;
+  kind: "at" | "every" | "cron";
+  at_ms?: number | null;
+  every_ms?: number | null;
+  expr?: string | null;
+  tz?: string | null;
 }
 
 export interface CronPayload {
   message: string;
-  deliver: boolean;
-  channel: string;
-  to: string;
+  deliver?: boolean;
+  channel?: string | null;
+  to?: string | null;
+}
+
+export interface CronState {
+  next_run_at_ms: number | null;
+  last_run_at_ms: number | null;
+  last_status: string | null;
+  last_error: string | null;
 }
 
 export interface CronJob {
@@ -23,8 +30,10 @@ export interface CronJob {
   enabled: boolean;
   schedule: CronSchedule;
   payload: CronPayload;
-  next_run: string | null;
-  last_run: string | null;
+  state: CronState;
+  delete_after_run: boolean;
+  created_at_ms: number;
+  updated_at_ms: number;
 }
 
 export interface CronJobRequest {
@@ -58,7 +67,7 @@ export function useCreateCronJob() {
 export function useUpdateCronJob() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: { id: string } & Partial<CronJobRequest>) =>
+    mutationFn: ({ id, ...data }: { id: string } & CronJobRequest) =>
       api.put(`/cron/jobs/${id}`, data).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["cron", "jobs"] });
@@ -82,8 +91,16 @@ export function useDeleteCronJob() {
 export function useToggleCronJob() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
-      api.put(`/cron/jobs/${id}`, { enabled }).then((r) => r.data),
+    mutationFn: ({ id, job, enabled }: { id: string; job: CronJob; enabled: boolean }) => {
+      const req: CronJobRequest = {
+        name: job.name,
+        enabled,
+        schedule: job.schedule,
+        payload: job.payload,
+        delete_after_run: job.delete_after_run,
+      };
+      return api.put(`/cron/jobs/${id}`, req).then((r) => r.data);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["cron", "jobs"] });
     },

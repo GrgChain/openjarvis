@@ -44,9 +44,9 @@ const ADMIN_ITEMS: NavItem[] = [
   { path: "/settings", label: "nav.settings", icon: Settings },
   { path: "/channels", label: "nav.channels", icon: Radio },
   { path: "/tools", label: "nav.tools", icon: Puzzle },
-  { path: "/users", label: "nav.users", icon: Users },
   { path: "/cron", label: "nav.cron", icon: Clock },
   { path: "/system-config", label: "nav.systemConfig", icon: FileJson },
+  { path: "/users", label: "nav.users", icon: Users },
 ];
 
 function NavLink({ item, active }: { item: NavItem; active: boolean }) {
@@ -138,7 +138,7 @@ export function Sidebar() {
 
       {/* Bottom: user row + inline theme toggle */}
       <div
-        className="shrink-0 px-2 pb-3"
+        className="mt-auto shrink-0 px-2 pb-3"
         style={{ borderTop: "1px solid hsl(var(--sidebar-section-label) / 0.12)" }}
       >
         <div className="mt-1 flex items-center gap-1">
@@ -158,11 +158,11 @@ export function Sidebar() {
             <DropdownMenuContent side="right" align="end" className="w-48">
               <DropdownMenuItem onClick={() => {
                 const currentLang = i18n.language;
-                const nextLang = currentLang === "zh" ? "en" : currentLang === "en" ? "ja" : "zh";
+                const nextLang = currentLang === "zh" ? "en" : "zh";
                 i18n.changeLanguage(nextLang);
               }}>
                 <Languages className="mr-2 h-4 w-4" />
-                {i18n.language === "zh" ? "English" : i18n.language === "en" ? "日本語" : "中文"}
+                {i18n.language === "zh" ? "English" : "中文"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setShowChangePwd(true)}>

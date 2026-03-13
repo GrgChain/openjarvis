@@ -11,6 +11,9 @@ RUN bun run build
 # Stage 2: Python runtime
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
+# Use Chinese PyPI mirror
+ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+
 # Configure Timezone to Beijing Time (Asia/Shanghai)
 ENV TZ=Asia/Shanghai
 

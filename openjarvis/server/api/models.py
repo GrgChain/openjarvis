@@ -105,31 +105,6 @@ class GatewayConfigRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# S3 / OSS Storage
-# ---------------------------------------------------------------------------
-
-
-class S3ConfigResponse(BaseModel):
-    enabled: bool
-    endpoint_url: str
-    access_key_id: str
-    secret_access_key: str  # masked
-    bucket: str
-    region: str
-    public_base_url: str
-
-
-class S3ConfigRequest(BaseModel):
-    enabled: bool | None = None
-    endpoint_url: str | None = None
-    access_key_id: str | None = None
-    secret_access_key: str | None = None  # empty string = keep current
-    bucket: str | None = None
-    region: str | None = None
-    public_base_url: str | None = None
-
-
-# ---------------------------------------------------------------------------
 # Providers
 # ---------------------------------------------------------------------------
 

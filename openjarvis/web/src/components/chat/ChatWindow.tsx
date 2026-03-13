@@ -15,17 +15,11 @@ export function ChatWindow() {
     messages,
     isWaiting,
     progressText,
-    showToolMessages,
     addMessage,
     setWaiting,
     setProgress,
     setCurrentSession,
-    toggleToolMessages,
   } = useChatStore();
-
-  const visibleMessages = showToolMessages
-    ? messages
-    : messages.filter((m) => m.role !== "tool");
 
   const wsRef = useRef<ChatWebSocket | null>(null);
   const assistantMsgIdRef = useRef<string | null>(null);
@@ -146,7 +140,7 @@ export function ChatWindow() {
           </div>
         ) : (
           <div className="space-y-4">
-            {visibleMessages.map((msg) => (
+            {messages.map((msg) => (
               <MessageBubble key={msg.id} message={msg} />
             ))}
           </div>
@@ -174,8 +168,6 @@ export function ChatWindow() {
         onStop={handleStop}
         isWaiting={isWaiting}
         isConnected={isConnected}
-        showToolMessages={showToolMessages}
-        onToggleToolMessages={toggleToolMessages}
       />
     </div>
   );

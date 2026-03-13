@@ -301,8 +301,8 @@ function AgentTab() {
   if (gateway && !gatewayInited) {
     setHost(gateway.host ?? "");
     setPort(String(gateway.port ?? ""));
-    setHeartbeatEnabled(gateway.heartbeat_enabled ?? false);
-    setHeartbeatInterval(String(gateway.heartbeat_interval ?? ""));
+    setHeartbeatEnabled(gateway.heartbeat?.enabled ?? false);
+    setHeartbeatInterval(String(gateway.heartbeat?.interval_s ?? ""));
     setGatewayInited(true);
   }
 
@@ -311,7 +311,7 @@ function AgentTab() {
       host: host || undefined,
       port: port ? Number(port) : undefined,
       heartbeat_enabled: heartbeatEnabled,
-      heartbeat_interval: heartbeatInterval ? Number(heartbeatInterval) : undefined,
+      heartbeat_interval_s: heartbeatInterval ? Number(heartbeatInterval) : undefined,
     });
   };
 

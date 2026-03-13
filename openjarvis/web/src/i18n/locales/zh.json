@@ -252,7 +252,8 @@
     "hour": "小时",
     "day": "日期",
     "month": "月份",
-    "weekday": "星期"
+    "weekday": "星期",
+    "intervalSeconds": "间隔（秒）"
   },
   "settings": {
     "title": "Agent 设置",
@@ -285,25 +286,8 @@
       "heartbeat": "定时心跳任务模板"
     }
   },
-  "s3": {
-    "title": "S3 对象存储",
-    "desc": "配置 S3 兼容的对象存储（阿里云 OSS、AWS S3 等），文件上传后将转换为 OSS 链接用于与模型交互。",
-    "enabled": "启用 S3 存储",
-    "endpointUrl": "Endpoint URL",
-    "endpointUrlPlaceholder": "https://oss-cn-hangzhou.aliyuncs.com",
-    "accessKeyId": "Access Key ID",
-    "secretAccessKey": "Secret Access Key",
-    "secretPlaceholder": "留空则保持不变",
-    "bucket": "Bucket 名称",
-    "region": "Region",
-    "regionPlaceholder": "oss-cn-hangzhou",
-    "publicBaseUrl": "公开访问 URL 前缀",
-    "publicBaseUrlPlaceholder": "https://my-bucket.oss-cn-hangzhou.aliyuncs.com",
-    "publicBaseUrlDesc": "上传文件后生成链接的 URL 前缀，留空则自动拼接 endpoint/bucket"
-  },
   "sysconfig": {
     "tabEditor": "配置编辑器",
-    "tabS3": "S3 存储",
     "tabBackup": "备份与恢复",
     "synced": "已同步",
     "format": "格式化",
@@ -358,7 +342,6 @@
     "language": "语言",
     "chinese": "中文",
     "english": "English",
-    "japanese": "日本語",
     "optional": "可选"
   }
 }

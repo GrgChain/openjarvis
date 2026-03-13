@@ -42,7 +42,7 @@ export const useChatStore = create<ChatState>()(
       messages: [],
       isWaiting: false,
       progressText: "",
-      showToolMessages: false,
+      showToolMessages: true,
 
       setCurrentSession: (key) =>
         set((state) => ({

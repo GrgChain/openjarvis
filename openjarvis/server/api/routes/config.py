@@ -5,9 +5,7 @@ from __future__ import annotations
 import datetime
 import io
 import json
-import mimetypes
 import shutil
-import uuid
 import zipfile
 from pathlib import Path
 from typing import Annotated
@@ -23,8 +21,6 @@ from server.api.models import (
     GatewayConfigRequest,
     GatewayConfigResponse,
     HeartbeatConfigModel,
-    S3ConfigRequest,
-    S3ConfigResponse,
 )
 from nanobot.config.schema import Config
 
@@ -294,141 +290,3 @@ async def put_raw_config(
     svc.config.__dict__.update(new_config.__dict__)
 
     return {"ok": True, "content": content}
-
-
-# ---------------------------------------------------------------------------
-# S3 / OSS Storage config
-# ---------------------------------------------------------------------------
-
-def _s3_config_path() -> Path:
-    from nanobot.config.loader import get_config_path
-    return get_config_path().parent / "s3_config.json"
-
-
-def _load_s3() -> dict:
-    p = _s3_config_path()
-    if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
-    return {
-        "enabled": False,
-        "endpoint_url": "",
-        "access_key_id": "",
-        "secret_access_key": "",
-        "bucket": "",
-        "region": "",
-        "public_base_url": "",
-    }
-
-
-def _save_s3(cfg: dict) -> None:
-    p = _s3_config_path()
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-@router.get("/s3", response_model=S3ConfigResponse)
-async def get_s3_config(
-    _admin: Annotated[dict, Depends(require_admin)],
-) -> S3ConfigResponse:
-    cfg = _load_s3()
-    return S3ConfigResponse(
-        enabled=cfg.get("enabled", False),
-        endpoint_url=cfg.get("endpoint_url", ""),
-        access_key_id=cfg.get("access_key_id", ""),
-        secret_access_key=_mask(cfg.get("secret_access_key", "")),
-        bucket=cfg.get("bucket", ""),
-        region=cfg.get("region", ""),
-        public_base_url=cfg.get("public_base_url", ""),
-    )
-
-
-@router.put("/s3", response_model=S3ConfigResponse)
-async def put_s3_config(
-    body: S3ConfigRequest,
-    _admin: Annotated[dict, Depends(require_admin)],
-) -> S3ConfigResponse:
-    cfg = _load_s3()
-    if body.enabled is not None:
-        cfg["enabled"] = body.enabled
-    if body.endpoint_url is not None:
-        cfg["endpoint_url"] = body.endpoint_url
-    if body.access_key_id is not None:
-        cfg["access_key_id"] = body.access_key_id
-    # Only update secret if a non-empty value is provided
-    if body.secret_access_key:
-        cfg["secret_access_key"] = body.secret_access_key
-    if body.bucket is not None:
-        cfg["bucket"] = body.bucket
-    if body.region is not None:
-        cfg["region"] = body.region
-    if body.public_base_url is not None:
-        cfg["public_base_url"] = body.public_base_url
-    _save_s3(cfg)
-    return await get_s3_config(_admin)
-
-
-@router.post("/s3/upload")
-async def upload_to_s3(
-    file: Annotated[UploadFile, File()],
-    _admin: Annotated[dict, Depends(require_admin)],
-) -> dict:
-    """Upload a file to the configured S3/OSS bucket and return its public URL."""
-    cfg = _load_s3()
-    if not cfg.get("enabled"):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "S3 storage is not enabled")
-    if not cfg.get("bucket"):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "S3 bucket is not configured")
-
-    try:
-        import boto3
-        from botocore.exceptions import BotoCoreError, ClientError
-    except ImportError as exc:
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "boto3 is not installed; run: pip install boto3",
-        ) from exc
-
-    endpoint_url: str | None = cfg.get("endpoint_url") or None
-    client = boto3.client(
-        "s3",
-        endpoint_url=endpoint_url,
-        aws_access_key_id=cfg.get("access_key_id") or None,
-        aws_secret_access_key=cfg.get("secret_access_key") or None,
-        region_name=cfg.get("region") or None,
-    )
-
-    data = await file.read()
-    original_name = file.filename or "upload"
-    safe_name = Path(original_name).name
-    uid = uuid.uuid4().hex[:8]
-    today = datetime.date.today().strftime("%Y-%m")
-    key = f"uploads/{today}/{uid}_{safe_name}"
-
-    content_type = (
-        file.content_type
-        or mimetypes.guess_type(safe_name)[0]
-        or "application/octet-stream"
-    )
-
-    try:
-        client.put_object(
-            Bucket=cfg["bucket"],
-            Key=key,
-            Body=data,
-            ContentType=content_type,
-        )
-    except (BotoCoreError, ClientError) as exc:
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            f"Upload failed: {exc}",
-        ) from exc
-
-    public_base = (cfg.get("public_base_url") or "").rstrip("/")
-    if public_base:
-        url = f"{public_base}/{key}"
-    elif endpoint_url:
-        url = f"{endpoint_url.rstrip('/')}/{cfg['bucket']}/{key}"
-    else:
-        url = f"https://{cfg['bucket']}.s3.amazonaws.com/{key}"
-
-    return {"url": url, "key": key, "filename": safe_name}

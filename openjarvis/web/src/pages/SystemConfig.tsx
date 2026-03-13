@@ -1,17 +1,14 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Download, Upload, FileJson, RefreshCw, Save, CheckCircle2, AlertCircle, Database } from "lucide-react";
+import { Download, Upload, FileJson, RefreshCw, Save, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Switch } from "../components/ui/switch";
-import { Label } from "../components/ui/label";
-import { Input } from "../components/ui/input";
-import { useRawConfig, useSaveRawConfig, exportWorkspace, useImportWorkspace, useS3Config, useSaveS3Config, type S3Config } from "../hooks/useConfig";
+import { useRawConfig, useSaveRawConfig, exportWorkspace, useImportWorkspace } from "../hooks/useConfig";
 
 // ── JSON validation helper ─────────────────────────────────────────────────
 
@@ -150,129 +147,6 @@ function RawConfigEditor() {
   );
 }
 
-// ── S3 Storage Panel ──────────────────────────────────────────────────────────
-
-function S3StoragePanel() {
-  const { t } = useTranslation();
-  const { data, isLoading } = useS3Config();
-  const save = useSaveS3Config();
-
-  const [form, setForm] = useState<Partial<S3Config> | null>(null);
-
-  // Initialize form when data loads
-  if (data && form === null) {
-    setForm({ ...data, secret_access_key: "" });
-  }
-
-  const set = (key: keyof S3Config, value: string | boolean) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
-
-  const handleSave = () => {
-    if (!form) return;
-    save.mutate(form);
-  };
-
-  if (isLoading) return <Skeleton className="h-64 w-full" />;
-
-  return (
-    <div className="space-y-4 max-w-2xl">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Database className="h-4 w-4 text-primary" />
-            {t("s3.title")}
-          </CardTitle>
-          <CardDescription className="text-xs">{t("s3.desc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Enable toggle */}
-          <div className="flex items-center gap-3">
-            <Switch
-              id="s3-enabled"
-              checked={form?.enabled ?? false}
-              onCheckedChange={(v) => set("enabled", v)}
-            />
-            <Label htmlFor="s3-enabled" className="text-sm">{t("s3.enabled")}</Label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t("s3.endpointUrl")}</Label>
-              <Input
-                value={form?.endpoint_url ?? ""}
-                onChange={(e) => set("endpoint_url", e.target.value)}
-                placeholder={t("s3.endpointUrlPlaceholder")}
-                className="text-sm h-8 font-mono"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("s3.accessKeyId")}</Label>
-                <Input
-                  value={form?.access_key_id ?? ""}
-                  onChange={(e) => set("access_key_id", e.target.value)}
-                  placeholder="Access Key ID"
-                  className="text-sm h-8 font-mono"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("s3.secretAccessKey")}</Label>
-                <Input
-                  type="password"
-                  value={form?.secret_access_key ?? ""}
-                  onChange={(e) => set("secret_access_key", e.target.value)}
-                  placeholder={t("s3.secretPlaceholder")}
-                  className="text-sm h-8 font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("s3.bucket")}</Label>
-                <Input
-                  value={form?.bucket ?? ""}
-                  onChange={(e) => set("bucket", e.target.value)}
-                  placeholder="my-bucket"
-                  className="text-sm h-8 font-mono"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("s3.region")}</Label>
-                <Input
-                  value={form?.region ?? ""}
-                  onChange={(e) => set("region", e.target.value)}
-                  placeholder={t("s3.regionPlaceholder")}
-                  className="text-sm h-8 font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t("s3.publicBaseUrl")}</Label>
-              <Input
-                value={form?.public_base_url ?? ""}
-                onChange={(e) => set("public_base_url", e.target.value)}
-                placeholder={t("s3.publicBaseUrlPlaceholder")}
-                className="text-sm h-8 font-mono"
-              />
-              <p className="text-xs text-muted-foreground">{t("s3.publicBaseUrlDesc")}</p>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-1">
-            <Button size="sm" className="h-8 gap-1.5" onClick={handleSave} disabled={save.isPending || !form}>
-              <Save className="h-3.5 w-3.5" />
-              {t("common.save")}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
 // ── Import / Export ───────────────────────────────────────────────────────────
 
 function ImportExportPanel() {
@@ -362,16 +236,11 @@ export default function SystemConfig() {
     <Tabs defaultValue="editor">
       <TabsList>
         <TabsTrigger value="editor">{t("sysconfig.tabEditor")}</TabsTrigger>
-        <TabsTrigger value="s3">{t("sysconfig.tabS3")}</TabsTrigger>
         <TabsTrigger value="backup">{t("sysconfig.tabBackup")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="editor" className="mt-4">
         <RawConfigEditor />
-      </TabsContent>
-
-      <TabsContent value="s3" className="mt-4">
-        <S3StoragePanel />
       </TabsContent>
 
       <TabsContent value="backup" className="mt-4">
