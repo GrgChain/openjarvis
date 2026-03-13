@@ -1,0 +1,16 @@
+x-common-config: &common-config
+  image: registry.cn-guangzhou.aliyuncs.com/jonluo/openjarvis:latest
+  volumes:
+    - ./.nanobot:/root/.nanobot
+  env_file:
+    - .env
+
+services:
+  nanobot-gateway:
+    container_name: nanobot-gateway
+    <<: *common-config
+    command: [ "gateway" ]
+    restart: unless-stopped
+    ports:
+      - 18790:18790
+      - 4096:4096

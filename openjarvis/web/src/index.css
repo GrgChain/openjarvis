@@ -1,0 +1,107 @@
+@import "@fontsource/inter/index.css";
+@import "@fontsource/jetbrains-mono/index.css";
+@import "highlight.js/styles/github.css" screen;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* === Light Theme — Nanobot orange palette === */
+    --background: 36 30% 97%;
+    --foreground: 20 30% 12%;
+    --card: 36 25% 99%;
+    --card-foreground: 20 30% 12%;
+    --popover: 36 25% 99%;
+    --popover-foreground: 20 30% 12%;
+    /* Warm orange — from logo "nano" text */
+    --primary: 24 90% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 34 25% 92%;
+    --secondary-foreground: 20 28% 20%;
+    --muted: 34 25% 92%;
+    --muted-foreground: 20 14% 48%;
+    --accent: 24 90% 94%;
+    --accent-foreground: 24 80% 30%;
+    --destructive: 0 84% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 22% 86%;
+    --input: 30 22% 86%;
+    --ring: 24 90% 50%;
+    --radius: 0.5rem;
+    /* Sidebar — warm white, orange-tinted actives */
+    --sidebar-bg: 36 30% 99%;
+    --sidebar-fg: 20 28% 18%;
+    --sidebar-muted: 20 14% 52%;
+    --sidebar-active-bg: 24 90% 93%;
+    --sidebar-active-fg: 24 75% 32%;
+    --sidebar-hover-bg: 34 25% 94%;
+    --sidebar-border: 30 22% 88%;
+    --sidebar-section-label: 20 14% 52%;
+    --sidebar-edge-shadow: 3px 0 20px rgba(120, 60, 0, 0.07);
+    --sidebar-glass-opacity: 0.88;
+  }
+
+  .dark {
+    /* === Dark Theme === */
+    --background: 222 18% 11%;
+    --foreground: 215 20% 90%;
+    --card: 222 18% 15%;
+    --card-foreground: 215 20% 90%;
+    --popover: 222 18% 15%;
+    --popover-foreground: 215 20% 90%;
+    /* Sky-blue in dark */
+    --primary: 199 80% 55%;
+    --primary-foreground: 222 18% 8%;
+    --secondary: 222 18% 20%;
+    --secondary-foreground: 215 20% 90%;
+    --muted: 222 18% 20%;
+    --muted-foreground: 215 12% 52%;
+    --accent: 199 45% 20%;
+    --accent-foreground: 199 80% 78%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 215 20% 90%;
+    --border: 222 18% 22%;
+    --input: 222 18% 22%;
+    --ring: 199 80% 55%;
+    /* Sidebar — same hue family, slightly deeper than main bg */
+    --sidebar-bg: 222 20% 9%;
+    --sidebar-fg: 215 18% 80%;
+    --sidebar-muted: 215 12% 46%;
+    --sidebar-active-bg: 199 45% 20%;
+    --sidebar-active-fg: 199 80% 76%;
+    --sidebar-hover-bg: 222 18% 16%;
+    --sidebar-border: 222 18% 18%;
+    --sidebar-section-label: 215 12% 40%;
+    --sidebar-edge-shadow: 3px 0 20px rgba(0, 0, 0, 0.35);
+    --sidebar-glass-opacity: 0.88;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans text-base;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  code, pre, kbd, samp {
+    @apply font-mono;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/30;
+}

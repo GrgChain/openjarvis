@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openjarvis-server"
+version = "0.0.1"
+description = "Web management panel for openjarvis"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "jonluo" }
+]
+keywords = ["openjarvis", "server", "ai", "agent"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "nanobot-ai",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "PyJWT>=2.8.0",
+    "bcrypt>=4.1",
+    "python-multipart>=0.0.9",
+    "boto3>=1.34",
+    "typer>=0.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/jonluo94/openjarvis"
+Repository = "https://github.com/jonluo94/openjarvis"
+
+[project.optional-dependencies]
+dev = [
+    "httpx",
+    "pytest",
+    "pytest-asyncio",
+]
+
+[project.scripts]
+nanobot-server = "server.__main__:main_cli"
+nanobot = "server.cli:run_nanobot"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["server*"]
+
+[tool.setuptools.package-data]
+"server" = ["web/dist/**/*", "web/dist/*"]
