@@ -56,7 +56,7 @@ class AgentSettingsResponse(BaseModel):
     max_tokens: int
     temperature: float
     max_iterations: int
-    memory_window: int
+    memory_window: int | None
     reasoning_effort: str | None
     workspace: str
     restrict_to_workspace: bool
@@ -188,6 +188,7 @@ class SkillInfo(BaseModel):
     source: Literal["builtin", "workspace"]
     path: str
     description: str = ""
+    emoji: str = ""
     available: bool
     enabled: bool = True
     unavailable_reason: str | None = None

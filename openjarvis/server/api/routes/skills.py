@@ -71,12 +71,15 @@ async def list_skills(
     for s in all_skills:
         available, reason = _skill_available(s["name"], s["path"])
         description = loader._get_skill_description(s["name"])
+        skill_meta = loader._get_skill_meta(s["name"])
+        emoji = skill_meta.get("emoji", "")
         result.append(
             SkillInfo(
                 name=s["name"],
                 source=s["source"],
                 path=s["path"],
                 description=description,
+                emoji=emoji,
                 available=available,
                 enabled=s["name"] not in disabled,
                 unavailable_reason=reason,

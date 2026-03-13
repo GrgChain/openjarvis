@@ -7,6 +7,7 @@ export interface SkillInfo {
   source: "builtin" | "workspace";
   path: string;
   description: string;
+  emoji: string;
   available: boolean;
   enabled: boolean;
   unavailable_reason: string | null;

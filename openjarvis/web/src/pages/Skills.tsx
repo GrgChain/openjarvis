@@ -30,7 +30,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { Skeleton } from "../components/ui/skeleton";
-import { Plus, Pencil, Trash2, AlertCircle, Zap, FileCode2 } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Puzzle } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -143,9 +143,9 @@ export default function Skills({ hideTitle }: { hideTitle?: boolean } = {}) {
                 <TableRow key={s.name}>
                   <TableCell className="font-mono font-medium">
                     <span className="inline-flex items-center gap-2">
-                      {s.source === "builtin"
-                        ? <Zap className="h-4 w-4 text-amber-500 shrink-0" />
-                        : <FileCode2 className="h-4 w-4 text-blue-500 shrink-0" />}
+                      {s.emoji
+                        ? <span className="text-base leading-none shrink-0">{s.emoji}</span>
+                        : <Puzzle className="h-4 w-4 text-muted-foreground shrink-0" />}
                       {s.name}
                     </span>
                   </TableCell>
