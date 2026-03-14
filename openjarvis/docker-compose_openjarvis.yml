@@ -6,8 +6,8 @@ x-common-config: &common-config
     - .env
 
 services:
-  nanobot-server:
-    container_name: nanobot-server
+  openjarvis-server:
+    container_name: openjarvis-server
     <<: *common-config
     command: [ "server" ]
     restart: unless-stopped
@@ -15,7 +15,7 @@ services:
       - 18790:18790
       - 4096:4096
 
-  nanobot-cli:
+  openjarvis-cli:
     <<: *common-config
     profiles:
       - cli
