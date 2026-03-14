@@ -284,6 +284,10 @@
     "exportWorkspace": "Export Config",
     "importWorkspace": "Import Config",
     "unsaved": "Unsaved changes",
+    "selectFile": "Select a file to edit",
+    "confirmDelete": "Are you sure you want to delete \"{{name}}\"?",
+    "fileDeleted": "Deleted",
+    "deleteFailed": "Failed to delete",
     "wsFiles": {
       "agents": "Define agent behavior and instructions",
       "soul": "Agent personality and core values",

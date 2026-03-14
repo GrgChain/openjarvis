@@ -124,6 +124,51 @@ export function useImportWorkspace() {
   });
 }
 
+export interface WorkspaceTreeNode {
+  name: string;
+  path: string;
+  type: "file" | "dir";
+  children?: WorkspaceTreeNode[];
+}
+
+export function useWorkspaceTree() {
+  return useQuery<{ tree: WorkspaceTreeNode[] }>({
+    queryKey: ["config", "workspace-tree"],
+    queryFn: () => api.get("/config/workspace/tree").then((r) => r.data),
+  });
+}
+
+export function useWorkspaceFileByPath(path: string) {
+  return useQuery<{ name: string; path: string; content: string }>({
+    queryKey: ["config", "workspace-file-path", path],
+    queryFn: () => api.get("/config/workspace/file", { params: { path } }).then((r) => r.data),
+    enabled: !!path,
+  });
+}
+
+export function useSaveWorkspaceFileByPath() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ path, content }: { path: string; content: string }) =>
+      api.put("/config/workspace/file", { path, content }).then((r) => r.data),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["config", "workspace-file-path", vars.path] });
+      toast.success("Saved");
+    },
+  });
+}
+
+export function useDeleteWorkspaceFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (path: string) =>
+      api.delete("/config/workspace/file", { params: { path } }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["config", "workspace-tree"] });
+    },
+  });
+}
+
 export function useRawConfig() {
   return useQuery<{ content: string }>({
     queryKey: ["config", "raw"],

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openjarvis-server"
-version = "0.0.1"
+version = "0.1.0"
 description = "Web management panel for openjarvis"
 readme = "README.md"
 license = { text = "MIT" }

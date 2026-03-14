@@ -278,6 +278,10 @@
     "exportWorkspace": "导出配置",
     "importWorkspace": "导入配置",
     "unsaved": "未保存",
+    "selectFile": "选择文件进行编辑",
+    "confirmDelete": "确定要删除 \"{{name}}\" 吗？",
+    "fileDeleted": "已删除",
+    "deleteFailed": "删除失败",
     "wsFiles": {
       "agents": "定义 Agent 的行为与指令",
       "soul": "Agent 的人格与核心价值观",

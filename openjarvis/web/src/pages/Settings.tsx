@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { ChevronDown, ChevronRight, X, Trash2, FolderOpen, Folder, File } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -27,7 +27,9 @@ import {
 import {
   useAgentSettings, useUpdateAgentSettings,
   useGatewayConfig, useUpdateGatewayConfig,
-  useWorkspaceFile, useSaveWorkspaceFile,
+  useWorkspaceTree, useWorkspaceFileByPath, useSaveWorkspaceFileByPath,
+  useDeleteWorkspaceFile,
+  type WorkspaceTreeNode,
 } from "../hooks/useConfig";
 
 // ── Providers tab ─────────────────────────────────────────────────────────────
@@ -440,33 +442,92 @@ function AgentTab() {
 
 // ── Workspace files tab ───────────────────────────────────────────────────────
 
-const WORKSPACE_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "TOOLS.md", "HEARTBEAT.md"];
+function TreeNode({
+  node,
+  depth,
+  selectedPath,
+  onSelect,
+  expandedDirs,
+  onToggleDir,
+  onDelete,
+}: {
+  node: WorkspaceTreeNode;
+  depth: number;
+  selectedPath: string;
+  onSelect: (path: string) => void;
+  expandedDirs: Set<string>;
+  onToggleDir: (path: string) => void;
+  onDelete: (path: string, name: string) => void;
+}) {
+  const isDir = node.type === "dir";
+  const isExpanded = expandedDirs.has(node.path);
+  const isSelected = node.path === selectedPath;
+  const isProtected = (!isDir && !node.path.includes("/") &&
+    ["AGENTS.md", "SOUL.md", "USER.md", "TOOLS.md", "HEARTBEAT.md"].includes(node.name)) ||
+    node.path === "memory" || node.path.startsWith("memory/");
 
-const FILE_DESCRIPTIONS: Record<string, string> = {
-  "AGENTS.md": "settings.wsFiles.agents",
-  "SOUL.md": "settings.wsFiles.soul",
-  "USER.md": "settings.wsFiles.user",
-  "TOOLS.md": "settings.wsFiles.tools",
-  "HEARTBEAT.md": "settings.wsFiles.heartbeat",
-};
+  return (
+    <>
+      <div
+        className={`group w-full flex items-center rounded-md text-sm font-mono transition-colors ${
+          isSelected ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+        }`}
+      >
+        <button
+          onClick={() => isDir ? onToggleDir(node.path) : onSelect(node.path)}
+          className="flex-1 text-left px-2 py-1 flex items-center gap-1.5 min-w-0"
+          style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        >
+          <span className="shrink-0">
+            {isDir ? (isExpanded ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />) : <File className="h-4 w-4" />}
+          </span>
+          <span className="truncate">{node.name}</span>
+        </button>
+        {!isProtected && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(node.path, node.name); }}
+          className="shrink-0 opacity-0 group-hover:opacity-100 p-1 mr-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-opacity"
+          title="Delete"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+        )}
+      </div>
+      {isDir && isExpanded && node.children?.map((child) => (
+        <TreeNode
+          key={child.path}
+          node={child}
+          depth={depth + 1}
+          selectedPath={selectedPath}
+          onSelect={onSelect}
+          expandedDirs={expandedDirs}
+          onToggleDir={onToggleDir}
+          onDelete={onDelete}
+        />
+      ))}
+    </>
+  );
+}
 
-function WorkspaceFileEditor({ name }: { name: string }) {
+function WorkspaceFileEditor({ filePath }: { filePath: string }) {
   const { t } = useTranslation();
-  const { data, isLoading } = useWorkspaceFile(name);
-  const save = useSaveWorkspaceFile();
+  const { data, isLoading } = useWorkspaceFileByPath(filePath);
+  const save = useSaveWorkspaceFileByPath();
   const [content, setContent] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [loadedPath, setLoadedPath] = useState("");
 
   // Reset when file changes
-  if (data && content === null) {
+  if (data && (content === null || loadedPath !== filePath)) {
     setContent(data.content);
     setDirty(false);
+    setLoadedPath(filePath);
   }
 
   const handleChange = (v: string) => { setContent(v); setDirty(true); };
 
   const handleSave = () => {
-    save.mutate({ name, content: content ?? "" }, {
+    save.mutate({ path: filePath, content: content ?? "" }, {
       onSuccess: () => setDirty(false),
     });
   };
@@ -497,43 +558,75 @@ function WorkspaceFileEditor({ name }: { name: string }) {
 
 function WorkspaceTab() {
   const { t } = useTranslation();
-  const [selected, setSelected] = useState("AGENTS.md");
+  const { data, isLoading } = useWorkspaceTree();
+  const deleteFile = useDeleteWorkspaceFile();
+  const [selected, setSelected] = useState("");
+  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
+
+  const toggleDir = (path: string) => {
+    setExpandedDirs((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  };
+
+  const handleDelete = (path: string, name: string) => {
+    if (!window.confirm(t("settings.confirmDelete", { name }))) return;
+    deleteFile.mutate(path, {
+      onSuccess: () => {
+        toast.success(t("settings.fileDeleted"));
+        if (selected === path || selected.startsWith(path + "/")) {
+          setSelected("");
+        }
+      },
+      onError: () => toast.error(t("settings.deleteFailed")),
+    });
+  };
+
+  const tree = data?.tree ?? [];
 
   return (
-    <div className="flex gap-4 h-full">
-      {/* Left nav */}
-      <div className="w-44 shrink-0 flex flex-col gap-1">
-        {WORKSPACE_FILES.map((name) => (
-          <button
-            key={name}
-            onClick={() => setSelected(name)}
-            className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
-              selected === name
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted"
-            }`}
-          >
-            <div className="text-sm font-mono font-medium leading-tight">{name}</div>
-            <div className={`text-xs leading-tight mt-0.5 ${selected === name ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-              {t(FILE_DESCRIPTIONS[name])}
-            </div>
-          </button>
-        ))}
-
-
+    <div className="flex gap-4" style={{ height: "calc(100vh - 200px)" }}>
+      {/* Left nav - tree view */}
+      <div className="w-52 shrink-0 flex flex-col gap-0.5 overflow-y-auto">
+        {isLoading ? (
+          <div className="space-y-1">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-7 w-full" />)}</div>
+        ) : tree.length === 0 ? (
+          <p className="text-sm text-muted-foreground px-2">{t("common.noData")}</p>
+        ) : (
+          tree.map((node) => (
+            <TreeNode
+              key={node.path}
+              node={node}
+              depth={0}
+              selectedPath={selected}
+              onSelect={setSelected}
+              expandedDirs={expandedDirs}
+              onToggleDir={toggleDir}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
       </div>
 
       {/* Right editor */}
       <div className="flex-1 min-w-0">
-        <Card className="h-full">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-mono">{selected}</CardTitle>
-            <CardDescription className="text-xs">{t(FILE_DESCRIPTIONS[selected])}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col" style={{ height: "calc(100% - 72px)" }}>
-            <WorkspaceFileEditor key={selected} name={selected} />
-          </CardContent>
-        </Card>
+        {selected ? (
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-mono">{selected}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col" style={{ height: "calc(100% - 56px)" }}>
+              <WorkspaceFileEditor key={selected} filePath={selected} />
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+            {t("settings.selectFile")}
+          </div>
+        )}
       </div>
     </div>
   );

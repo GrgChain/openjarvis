@@ -182,6 +182,122 @@ async def put_workspace_file(
     return {"name": name, "content": content}
 
 
+@router.get("/workspace/tree")
+async def get_workspace_tree(
+    _admin: Annotated[dict, Depends(require_admin)],
+    svc: Annotated[ServiceContainer, Depends(get_services)],
+) -> dict:
+    """Return a recursive tree of the workspace directory."""
+    workspace = Path(svc.config.agents.defaults.workspace).expanduser().resolve()
+
+    # Directories to exclude (too large or not useful)
+    _EXCLUDED_DIRS = {"sessions", "__pycache__", "skills"}
+
+    def _build_tree(root: Path) -> list[dict]:
+        nodes: list[dict] = []
+        if not root.is_dir():
+            return nodes
+        try:
+            entries = sorted(root.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+        except PermissionError:
+            return nodes
+        for entry in entries:
+            # Skip hidden files/dirs
+            if entry.name.startswith("."):
+                continue
+            rel = str(entry.relative_to(workspace))
+            if entry.is_dir():
+                if entry.name in _EXCLUDED_DIRS:
+                    continue
+                nodes.append({
+                    "name": entry.name,
+                    "path": rel,
+                    "type": "dir",
+                    "children": _build_tree(entry),
+                })
+            else:
+                nodes.append({
+                    "name": entry.name,
+                    "path": rel,
+                    "type": "file",
+                })
+        return nodes
+
+    return {"tree": _build_tree(workspace)}
+
+
+@router.get("/workspace/file")
+async def get_workspace_file_by_path(
+    path: str,
+    _admin: Annotated[dict, Depends(require_admin)],
+    svc: Annotated[ServiceContainer, Depends(get_services)],
+) -> dict:
+    """Read any text file within the workspace directory by relative path."""
+    workspace = Path(svc.config.agents.defaults.workspace).expanduser().resolve()
+    target = (workspace / path).resolve()
+    # Prevent path traversal
+    if not str(target).startswith(str(workspace)):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Path outside workspace")
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"File not found: {path}")
+    try:
+        content = target.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "File is not a text file")
+    return {"name": target.name, "path": path, "content": content}
+
+
+@router.put("/workspace/file")
+async def put_workspace_file_by_path(
+    body: dict,
+    _admin: Annotated[dict, Depends(require_admin)],
+    svc: Annotated[ServiceContainer, Depends(get_services)],
+) -> dict:
+    """Write content to a file within the workspace directory."""
+    path: str = body.get("path", "")
+    content: str = body.get("content", "")
+    if not path:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Missing 'path'")
+    workspace = Path(svc.config.agents.defaults.workspace).expanduser().resolve()
+    target = (workspace / path).resolve()
+    # Prevent path traversal
+    if not str(target).startswith(str(workspace)):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Path outside workspace")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    return {"name": target.name, "path": path, "content": content}
+
+
+@router.delete("/workspace/file")
+async def delete_workspace_file(
+    path: str,
+    _admin: Annotated[dict, Depends(require_admin)],
+    svc: Annotated[ServiceContainer, Depends(get_services)],
+) -> dict:
+    """Delete a file or directory within the workspace."""
+    if not path:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Missing 'path'")
+    workspace = Path(svc.config.agents.defaults.workspace).expanduser().resolve()
+    target = (workspace / path).resolve()
+    # Prevent path traversal
+    if not str(target).startswith(str(workspace)):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Path outside workspace")
+    if not target.exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Not found: {path}")
+    # Protect core workspace files
+    if target.name in _WORKSPACE_FILES and target.parent == workspace:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"Cannot delete protected file: {target.name}")
+    # Protect memory directory and its contents
+    memory_dir = workspace / "memory"
+    if target == memory_dir or str(target).startswith(str(memory_dir) + "/"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Cannot delete memory files")
+    if target.is_dir():
+        shutil.rmtree(target)
+    else:
+        target.unlink()
+    return {"ok": True, "path": path}
+
+
 @router.get("/workspace/export")
 async def export_workspace(
     _admin: Annotated[dict, Depends(require_admin)],

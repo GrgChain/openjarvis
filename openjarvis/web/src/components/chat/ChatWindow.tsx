@@ -56,7 +56,12 @@ export function ChatWindow() {
   const handleWsMessage = useCallback(
     (msg: WsMessage) => {
       if (msg.type === "session_info") {
-        if (msg.session_key && msg.session_key !== useChatStore.getState().currentSessionKey) {
+        // Only adopt the server-assigned key when the client has no key yet.
+        // This prevents the WS initial handshake from overriding a session
+        // the user already selected (which would create a phantom entry in
+        // the sidebar every time the Chat page mounts).
+        const currentKey = useChatStore.getState().currentSessionKey;
+        if (msg.session_key && !currentKey) {
           setCurrentSession(msg.session_key);
         }
       } else if (msg.type === "progress") {

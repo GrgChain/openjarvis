@@ -198,7 +198,15 @@ export default function Chat() {
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteSession.mutate(s.key);
-                      if (active) newChat();
+                      if (active) {
+                        // Switch to the next available session instead of creating a new one
+                        const remaining = displaySessions.filter((ds) => ds.key !== s.key);
+                        if (remaining.length > 0) {
+                          switchSession(remaining[0].key);
+                        } else {
+                          newChat();
+                        }
+                      }
                     }}
                   >
                     <Trash2 className="h-3 w-3" />
