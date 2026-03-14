@@ -58,10 +58,10 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-gray-950 dark:via-gray-900 dark:to-orange-950 px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-violet-50 via-white to-violet-100 dark:from-gray-950 dark:via-gray-900 dark:to-violet-950 px-4">
       {/* 装饰性背景圆圈 */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-orange-200/30 dark:bg-orange-900/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-300/30 dark:bg-orange-800/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+      <div className="absolute top-0 left-0 w-96 h-96 bg-violet-200/30 dark:bg-violet-900/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-violet-300/30 dark:bg-violet-800/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
       
       {/* 语言切换按钮 */}
       <div className="absolute top-4 right-4">
@@ -83,21 +83,21 @@ export default function Login() {
         </DropdownMenu>
       </div>
 
-      <Card className="w-full max-w-sm shadow-2xl backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-orange-200/50 dark:border-orange-900/50 animate-in fade-in zoom-in duration-500">
+      <Card className="w-full max-w-sm shadow-2xl backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-violet-200/50 dark:border-violet-900/50 animate-in fade-in zoom-in duration-500">
         <CardHeader className="text-center space-y-3 pb-4">
           <div className="flex justify-center">
             <div className="relative">
-              <div className="absolute inset-0 bg-orange-400/20 dark:bg-orange-600/20 rounded-2xl blur-xl animate-pulse"></div>
+              <div className="absolute inset-0 bg-violet-400/20 dark:bg-violet-600/20 rounded-2xl blur-xl animate-pulse"></div>
               <img 
-                src="/icon.png" 
-                alt="Nanobot" 
-                className="relative h-16 w-16 rounded-2xl shadow-lg ring-2 ring-orange-100 dark:ring-orange-900/50" 
+                src="/icon.svg" 
+                alt="OpenJarvis" 
+                className="relative h-16 w-16 rounded-2xl shadow-lg ring-2 ring-violet-100 dark:ring-violet-900/50" 
               />
             </div>
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent">
-              Nanobot
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent">
+              OpenJarvis
             </CardTitle>
             <CardDescription className="text-sm mt-1">{t("auth.login")}</CardDescription>
           </div>
@@ -109,13 +109,13 @@ export default function Login() {
                 {t("auth.username")}
               </Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-500" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-violet-400" />
                 <Input
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-                  className="pl-10 h-10 border-orange-200 focus-visible:ring-orange-500 bg-gradient-to-r from-orange-50/50 to-white dark:from-orange-950/30 dark:to-gray-800"
+                  className="pl-10 h-10 border-violet-200 focus-visible:ring-violet-400 bg-gradient-to-r from-violet-50/50 to-white dark:from-violet-950/30 dark:to-gray-800"
                   placeholder={t("auth.username")}
                   required
                 />
@@ -126,14 +126,14 @@ export default function Login() {
                 {t("auth.password")}
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-violet-400" />
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
-                  className="pl-10 h-10 border-orange-200 focus-visible:ring-orange-500 bg-gradient-to-r from-orange-50/50 to-white dark:from-orange-950/30 dark:to-gray-800"
+                  className="pl-10 h-10 border-violet-200 focus-visible:ring-violet-400 bg-gradient-to-r from-violet-50/50 to-white dark:from-violet-950/30 dark:to-gray-800"
                   placeholder={t("auth.password")}
                   required
                 />
@@ -141,7 +141,7 @@ export default function Login() {
             </div>
             <Button 
               type="submit" 
-              className="w-full h-10 mt-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-xl shadow-orange-500/40 hover:shadow-orange-600/50 transition-all duration-300 hover:scale-[1.02]" 
+              className="w-full h-10 mt-6 bg-gradient-to-r from-violet-400 to-violet-500 hover:from-violet-500 hover:to-violet-600 text-white font-semibold shadow-xl shadow-violet-400/40 hover:shadow-violet-500/50 transition-all duration-300 hover:scale-[1.02]" 
               disabled={loading}
             >
               {loading ? t("common.loading") : t("auth.loginButton")}

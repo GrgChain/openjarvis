@@ -130,9 +130,9 @@ export function SetupGuideDialog() {
       >
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
-              {step === 0 && <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />}
-              {step === 1 && <Key className="h-5 w-5 text-orange-600 dark:text-orange-400" />}
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/30">
+              {step === 0 && <AlertCircle className="h-5 w-5 text-violet-500 dark:text-violet-400" />}
+              {step === 1 && <Key className="h-5 w-5 text-violet-500 dark:text-violet-400" />}
             </div>
             <DialogTitle>
               {step === 0 && t("setupGuide.title")}
@@ -150,9 +150,9 @@ export function SetupGuideDialog() {
           {step === 0 && (
             <div className="space-y-4">
               <div className="grid gap-3">
-                <div className="flex items-center gap-3 rounded-lg border p-3 bg-orange-50/50 dark:bg-orange-950/20">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/50">
-                    <span className="text-sm font-semibold text-orange-600">1</span>
+                <div className="flex items-center gap-3 rounded-lg border p-3 bg-violet-50/50 dark:bg-violet-950/20">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/50">
+                    <span className="text-sm font-semibold text-violet-500">1</span>
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">{t("setupGuide.step1Title")}</p>
@@ -161,7 +161,7 @@ export function SetupGuideDialog() {
                 </div>
               </div>
               <div className="flex justify-end">
-                <Button onClick={() => setStep(1)} className="gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+                <Button onClick={() => setStep(1)} className="gap-2 bg-gradient-to-r from-violet-400 to-violet-500 hover:from-violet-500 hover:to-violet-600">
                   {t("setupGuide.startSetup")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -257,7 +257,7 @@ export function SetupGuideDialog() {
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   {t("common.back")}
                 </Button>
-                <Button onClick={handleSaveProvider} disabled={updateProvider.isPending || updateAgent.isPending} className="gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+                <Button onClick={handleSaveProvider} disabled={updateProvider.isPending || updateAgent.isPending} className="gap-2 bg-gradient-to-r from-violet-400 to-violet-500 hover:from-violet-500 hover:to-violet-600">
                   {(updateProvider.isPending || updateAgent.isPending) ? t("common.saving") : t("setupGuide.complete")}
                   <CheckCircle2 className="h-4 w-4" />
                 </Button>

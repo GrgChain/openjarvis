@@ -97,8 +97,9 @@ export function Sidebar() {
       }}
     >
       {/* Logo */}
-      <div className="flex h-12 items-center px-4">
-        <img src="/logo.png" alt="Nanobot" className="h-7 w-auto object-contain mix-blend-multiply dark:invert dark:mix-blend-screen" />
+      <div className="flex h-12 items-center gap-2.5 px-4">
+        <img src="/icon.svg" alt="" className="h-7 w-7 rounded-lg object-contain" />
+        <span className="text-sm font-bold tracking-tight bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent">OpenJarvis</span>
       </div>
 
       {/* Nav */}

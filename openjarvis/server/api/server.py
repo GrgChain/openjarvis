@@ -16,7 +16,7 @@ from server.api.users import UserStore
 def create_app(container: ServiceContainer | None = None) -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
-        title="nanobot Server",
+        title="OpenJarvis Server",
         version="0.1.0",
         docs_url="/api/docs",
         redoc_url="/api/redoc",

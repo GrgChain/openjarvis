@@ -53,7 +53,7 @@ async def get_agent_settings(
         max_tokens=d.max_tokens,
         temperature=d.temperature,
         max_iterations=d.max_tool_iterations,
-        memory_window=d.memory_window,
+        context_window_tokens=d.context_window_tokens,
         reasoning_effort=d.reasoning_effort,
         workspace=d.workspace,
         restrict_to_workspace=t.restrict_to_workspace,
@@ -88,8 +88,8 @@ async def update_agent_settings(
         d.temperature = body.temperature
     if body.max_iterations is not None:
         d.max_tool_iterations = body.max_iterations
-    if body.memory_window is not None:
-        d.memory_window = body.memory_window
+    if body.context_window_tokens is not None:
+        d.context_window_tokens = body.context_window_tokens
     if body.reasoning_effort is not None:
         d.reasoning_effort = body.reasoning_effort
     if body.workspace is not None:
@@ -199,7 +199,7 @@ async def export_workspace(
                     zf.write(f, f.relative_to(nanobot_dir))
     buf.seek(0)
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"nanobot_backup_{ts}.zip"
+    filename = f"openjarvis_backup_{ts}.zip"
     return StreamingResponse(
         buf,
         media_type="application/zip",
@@ -225,7 +225,7 @@ async def import_workspace(
 
     # Back up the current .nanobot directory before overwriting
     if nanobot_dir.exists() and any(nanobot_dir.iterdir()):
-        backup_dir = nanobot_dir.parent / f".nanobot_backup_{ts}"
+        backup_dir = nanobot_dir.parent / f".openjarvis_backup_{ts}"
         shutil.copytree(nanobot_dir, backup_dir)
         backup_path = str(backup_dir)
 

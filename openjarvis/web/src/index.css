@@ -7,72 +7,72 @@
 
 @layer base {
   :root {
-    /* === Light Theme — Nanobot orange palette === */
-    --background: 36 30% 97%;
-    --foreground: 20 30% 12%;
-    --card: 36 25% 99%;
-    --card-foreground: 20 30% 12%;
-    --popover: 36 25% 99%;
-    --popover-foreground: 20 30% 12%;
-    /* Warm orange — from logo "nano" text */
-    --primary: 24 90% 50%;
+    /* === Light Theme — OpenJarvis violet (blue-purple) palette === */
+    --background: 255 30% 97%;
+    --foreground: 255 30% 12%;
+    --card: 255 25% 99%;
+    --card-foreground: 255 30% 12%;
+    --popover: 255 25% 99%;
+    --popover-foreground: 255 30% 12%;
+    /* Violet — from logo */
+    --primary: 255 70% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 34 25% 92%;
-    --secondary-foreground: 20 28% 20%;
-    --muted: 34 25% 92%;
-    --muted-foreground: 20 14% 48%;
-    --accent: 24 90% 94%;
-    --accent-foreground: 24 80% 30%;
+    --secondary: 255 20% 93%;
+    --secondary-foreground: 255 28% 20%;
+    --muted: 255 20% 93%;
+    --muted-foreground: 255 14% 48%;
+    --accent: 255 60% 94%;
+    --accent-foreground: 255 60% 30%;
     --destructive: 0 84% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 30 22% 86%;
-    --input: 30 22% 86%;
-    --ring: 24 90% 50%;
+    --border: 255 18% 87%;
+    --input: 255 18% 87%;
+    --ring: 255 70% 55%;
     --radius: 0.5rem;
-    /* Sidebar — warm white, orange-tinted actives */
-    --sidebar-bg: 36 30% 99%;
-    --sidebar-fg: 20 28% 18%;
-    --sidebar-muted: 20 14% 52%;
-    --sidebar-active-bg: 24 90% 93%;
-    --sidebar-active-fg: 24 75% 32%;
-    --sidebar-hover-bg: 34 25% 94%;
-    --sidebar-border: 30 22% 88%;
-    --sidebar-section-label: 20 14% 52%;
-    --sidebar-edge-shadow: 3px 0 20px rgba(120, 60, 0, 0.07);
+    /* Sidebar — cool white, violet-tinted actives */
+    --sidebar-bg: 255 25% 99%;
+    --sidebar-fg: 255 28% 18%;
+    --sidebar-muted: 255 14% 52%;
+    --sidebar-active-bg: 255 65% 93%;
+    --sidebar-active-fg: 255 60% 35%;
+    --sidebar-hover-bg: 255 20% 94%;
+    --sidebar-border: 255 18% 88%;
+    --sidebar-section-label: 255 14% 52%;
+    --sidebar-edge-shadow: 3px 0 20px rgba(60, 30, 160, 0.07);
     --sidebar-glass-opacity: 0.88;
   }
 
   .dark {
-    /* === Dark Theme === */
-    --background: 222 18% 11%;
-    --foreground: 215 20% 90%;
-    --card: 222 18% 15%;
-    --card-foreground: 215 20% 90%;
-    --popover: 222 18% 15%;
-    --popover-foreground: 215 20% 90%;
-    /* Sky-blue in dark */
-    --primary: 199 80% 55%;
-    --primary-foreground: 222 18% 8%;
-    --secondary: 222 18% 20%;
-    --secondary-foreground: 215 20% 90%;
-    --muted: 222 18% 20%;
-    --muted-foreground: 215 12% 52%;
-    --accent: 199 45% 20%;
-    --accent-foreground: 199 80% 78%;
+    /* === Dark Theme — violet accent === */
+    --background: 250 18% 11%;
+    --foreground: 250 20% 90%;
+    --card: 250 18% 15%;
+    --card-foreground: 250 20% 90%;
+    --popover: 250 18% 15%;
+    --popover-foreground: 250 20% 90%;
+    /* Violet in dark */
+    --primary: 255 70% 65%;
+    --primary-foreground: 250 18% 8%;
+    --secondary: 250 18% 20%;
+    --secondary-foreground: 250 20% 90%;
+    --muted: 250 18% 20%;
+    --muted-foreground: 250 12% 52%;
+    --accent: 255 40% 22%;
+    --accent-foreground: 255 70% 78%;
     --destructive: 0 62% 45%;
-    --destructive-foreground: 215 20% 90%;
-    --border: 222 18% 22%;
-    --input: 222 18% 22%;
-    --ring: 199 80% 55%;
+    --destructive-foreground: 250 20% 90%;
+    --border: 250 18% 22%;
+    --input: 250 18% 22%;
+    --ring: 255 70% 65%;
     /* Sidebar — same hue family, slightly deeper than main bg */
-    --sidebar-bg: 222 20% 9%;
-    --sidebar-fg: 215 18% 80%;
-    --sidebar-muted: 215 12% 46%;
-    --sidebar-active-bg: 199 45% 20%;
-    --sidebar-active-fg: 199 80% 76%;
-    --sidebar-hover-bg: 222 18% 16%;
-    --sidebar-border: 222 18% 18%;
-    --sidebar-section-label: 215 12% 40%;
+    --sidebar-bg: 250 20% 9%;
+    --sidebar-fg: 250 18% 80%;
+    --sidebar-muted: 250 12% 46%;
+    --sidebar-active-bg: 255 40% 22%;
+    --sidebar-active-fg: 255 70% 78%;
+    --sidebar-hover-bg: 250 18% 16%;
+    --sidebar-border: 250 18% 18%;
+    --sidebar-section-label: 250 12% 40%;
     --sidebar-edge-shadow: 3px 0 20px rgba(0, 0, 0, 0.35);
     --sidebar-glass-opacity: 0.88;
   }

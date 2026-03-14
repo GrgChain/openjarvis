@@ -34,32 +34,32 @@ export default function Dashboard() {
       value: loadingChannels ? null : `${runningChannels} / ${totalChannels}`,
       icon: Radio,
       sub: t("dashboard.running"),
-      iconColor: "text-blue-500",
-      iconBg: "bg-blue-50 dark:bg-blue-950/50",
+      iconColor: "text-violet-500",
+      iconBg: "bg-violet-50 dark:bg-violet-950/50",
     },
     {
       label: t("dashboard.skills"),
       value: loadingSkills ? null : `${activeSkills}`,
       icon: Wrench,
       sub: t("dashboard.active"),
-      iconColor: "text-sky-500",
-      iconBg: "bg-sky-50 dark:bg-sky-950/50",
+      iconColor: "text-violet-400",
+      iconBg: "bg-violet-50 dark:bg-violet-950/50",
     },
     {
       label: t("dashboard.cronJobs"),
       value: loadingCron ? null : `${enabledCron}`,
       icon: Clock,
       sub: t("dashboard.active"),
-      iconColor: "text-amber-500",
-      iconBg: "bg-amber-50 dark:bg-amber-950/50",
+      iconColor: "text-violet-300",
+      iconBg: "bg-violet-50 dark:bg-violet-950/50",
     },
     {
       label: t("dashboard.sessions"),
       value: loadingSessions ? null : `${totalSessions}`,
       icon: MessageSquare,
       sub: t("dashboard.active"),
-      iconColor: "text-emerald-500",
-      iconBg: "bg-emerald-50 dark:bg-emerald-950/50",
+      iconColor: "text-violet-600",
+      iconBg: "bg-violet-50 dark:bg-violet-950/50",
     },
   ];
 
@@ -123,7 +123,7 @@ export default function Dashboard() {
                       hasError
                         ? "border-destructive/40 bg-destructive/5"
                         : isRunning
-                        ? "border-green-500/30 bg-green-500/5"
+                        ? "border-violet-500/30 bg-violet-500/5"
                         : "border-border bg-muted/30"
                     }`}
                   >
@@ -133,7 +133,7 @@ export default function Dashboard() {
                       {hasError ? (
                         <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                       ) : isRunning ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-violet-500 shrink-0 mt-0.5" />
                       ) : (
                         <XCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                       )}
@@ -151,7 +151,7 @@ export default function Dashboard() {
                       ) : (
                         <Badge
                           variant={isRunning ? "default" : "secondary"}
-                          className={`text-xs px-1.5 py-0 ${isRunning ? "bg-green-500 hover:bg-green-600 text-white" : ""}`}
+                          className={`text-xs px-1.5 py-0 ${isRunning ? "bg-violet-500 hover:bg-violet-600 text-white" : ""}`}
                         >
                           {isRunning ? t("dashboard.running") : t("dashboard.stopped")}
                         </Badge>

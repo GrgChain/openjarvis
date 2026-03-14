@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="640" height="160">
+  <defs>
+    <linearGradient id="icon-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="icon-shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="144" height="144" rx="34" ry="34" fill="url(#icon-bg)"/>
+  <rect x="8" y="8" width="144" height="144" rx="34" ry="34" fill="url(#icon-shine)"/>
+  <text x="77" y="114" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="102" fill="white" opacity="0.95">J</text>
+  <circle cx="111" cy="42" r="5.4" fill="white" opacity="0.7"/>
+  <circle cx="111" cy="42" r="2.7" fill="white" opacity="0.9"/>
+  <text x="176" y="112" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="64" fill="#8b5cf6">Open</text>
+  <text x="334" y="112" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="64" fill="#a78bfa">Jarvis</text>
+</svg>

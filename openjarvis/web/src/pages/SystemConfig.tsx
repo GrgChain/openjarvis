@@ -85,14 +85,14 @@ function RawConfigEditor() {
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 flex-1">
           <FileJson className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-muted-foreground">~/.nanobot/config.json</span>
+          <span className="text-sm font-medium text-muted-foreground">config.json</span>
           {dirty && (
-            <Badge variant="outline" className="text-xs text-amber-600 border-amber-300 bg-amber-50">
+            <Badge variant="outline" className="text-xs text-violet-600 border-violet-300 bg-violet-50">
               {t("settings.unsaved")}
             </Badge>
           )}
           {!dirty && !jsonError && content !== null && (
-            <Badge variant="outline" className="text-xs text-green-600 border-green-300 bg-green-50">
+            <Badge variant="outline" className="text-xs text-violet-500 border-violet-300 bg-violet-50">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               {t("sysconfig.synced")}
             </Badge>
@@ -179,7 +179,7 @@ function ImportExportPanel() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Download className="h-4 w-4 text-sky-500" />
+            <Download className="h-4 w-4 text-violet-500" />
             {t("sysconfig.export")}
           </CardTitle>
           <CardDescription className="text-xs">
@@ -202,7 +202,7 @@ function ImportExportPanel() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Upload className="h-4 w-4 text-amber-500" />
+            <Upload className="h-4 w-4 text-violet-400" />
             {t("sysconfig.import")}
           </CardTitle>
           <CardDescription className="text-xs">

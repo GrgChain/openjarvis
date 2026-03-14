@@ -154,7 +154,7 @@
     "title": "Tools"
   },
   "setupGuide": {
-    "title": "Welcome to Nanobot",
+    "title": "Welcome to OpenJarvis",
     "description": "Complete the following setup to start using AI assistant features.",
     "step1Title": "Configure Model Provider",
     "step1Description": "Select and configure at least one AI model provider (e.g., OpenAI, Anthropic) and enter your API Key.",
@@ -164,7 +164,7 @@
     "complete": "Complete",
     "mustComplete": "Please complete the setup to continue",
     "agentConfigRequired": "Please select provider and enter model name",
-    "setupComplete": "Setup complete! Welcome to Nanobot"
+    "setupComplete": "Setup complete! Welcome to OpenJarvis"
   },
   "providers": {
     "configured": "Configured",
@@ -270,7 +270,7 @@
     "maxTokens": "Max Tokens",
     "temperature": "Temperature",
     "maxToolIterations": "Max Tool Iterations",
-    "memoryWindow": "Memory Window",
+    "contextWindow": "Context Window (tokens)",
     "reasoningEffort": "Reasoning Effort",
     "workspace": "Workspace",
     "gateway": "Gateway Config",
@@ -299,13 +299,13 @@
     "format": "Format",
     "formatted": "Formatted",
     "jsonError": "JSON syntax error",
-    "export": "Export .nanobot Config",
+    "export": "Export Config",
     "exportDesc": "Downloads the entire ~/.nanobot directory as a ZIP archive (includes config.json, sessions, workspace files, etc.).",
     "exportBtn": "Download Backup",
     "exportSuccess": "Config exported",
     "exportError": "Export failed",
-    "import": "Import .nanobot Config",
-    "importDesc": "Upload a previously exported ZIP backup to restore ~/.nanobot. The current config is automatically backed up before import.",
+    "import": "Import Config",
+    "importDesc": "Upload a previously exported ZIP backup to restore config. The current config is automatically backed up before import.",
     "importBtn": "Select Backup File",
     "importHint": "Only .zip files are accepted. The current config is auto-backed up before import."
   },

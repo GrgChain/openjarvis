@@ -130,8 +130,8 @@ export default function Skills({ hideTitle }: { hideTitle?: boolean } = {}) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("skills.name")}</TableHead>
-                <TableHead>{t("skills.description")}</TableHead>
+                <TableHead className="w-1/5">{t("skills.name")}</TableHead>
+                <TableHead className="w-2/5">{t("skills.description")}</TableHead>
                 <TableHead className="w-24">{t("skills.type")}</TableHead>
                 <TableHead className="w-28 text-center">{t("skills.available")}</TableHead>
                 <TableHead className="w-24 text-center">{t("skills.enabled")}</TableHead>
@@ -141,7 +141,7 @@ export default function Skills({ hideTitle }: { hideTitle?: boolean } = {}) {
             <TableBody>
               {skills?.map((s) => (
                 <TableRow key={s.name}>
-                  <TableCell className="font-mono font-medium">
+                  <TableCell className="font-mono font-medium w-1/5">
                     <span className="inline-flex items-center gap-2">
                       {s.emoji
                         ? <span className="text-base leading-none shrink-0">{s.emoji}</span>
@@ -149,7 +149,7 @@ export default function Skills({ hideTitle }: { hideTitle?: boolean } = {}) {
                       {s.name}
                     </span>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-xs">
+                  <TableCell className="text-sm text-muted-foreground w-2/5">
                     <span className="line-clamp-2">{s.description || "—"}</span>
                   </TableCell>
                   <TableCell>

@@ -156,7 +156,7 @@
     "title": "工具"
   },
   "setupGuide": {
-    "title": "欢迎使用 Nanobot",
+    "title": "欢迎使用 OpenJarvis",
     "description": "首次使用需要完成以下配置，才能开始使用 AI 助手功能。",
     "step1Title": "配置模型提供商",
     "step1Description": "选择并配置至少一个 AI 模型提供商（如 OpenAI、Anthropic 等），填入 API Key。",
@@ -166,7 +166,7 @@
     "complete": "完成",
     "mustComplete": "请完成配置后再继续",
     "agentConfigRequired": "请选择提供商和填写模型名称",
-    "setupComplete": "配置完成！欢迎使用 Nanobot"
+    "setupComplete": "配置完成！欢迎使用 OpenJarvis"
   },
   "mcp": {
     "title": "MCP 服务器",
@@ -264,7 +264,7 @@
     "maxTokens": "最大 Token 数",
     "temperature": "温度",
     "maxToolIterations": "最大工具调用轮数",
-    "memoryWindow": "记忆窗口",
+    "contextWindow": "上下文窗口（tokens）",
     "reasoningEffort": "推理强度",
     "workspace": "工作目录",
     "gateway": "网关配置",
@@ -293,13 +293,13 @@
     "format": "格式化",
     "formatted": "格式化完成",
     "jsonError": "JSON 格式错误",
-    "export": "导出 .nanobot 配置",
-    "exportDesc": "将整个 ~/.nanobot 目录打包为 ZIP 文件下载（包含 config.json、会话、工作区文件等）。",
+    "export": "导出配置",
+    "exportDesc": "将整个配置目录打包为 ZIP 文件下载（包含 config.json、会话、工作区文件等）。",
     "exportBtn": "下载备份文件",
     "exportSuccess": "配置已导出",
     "exportError": "导出失败",
-    "import": "导入 .nanobot 配置",
-    "importDesc": "上传之前导出的 ZIP 备份文件，覆盖当前 ~/.nanobot 目录。导入前会自动备份现有配置。",
+    "import": "导入配置",
+    "importDesc": "上传之前导出的 ZIP 备份文件恢复配置。导入前会自动备份现有配置。",
     "importBtn": "选择备份文件",
     "importHint": "仅支持 .zip 格式，导入前会自动备份当前配置。"
   },

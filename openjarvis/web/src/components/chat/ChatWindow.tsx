@@ -134,7 +134,7 @@ export function ChatWindow() {
               <span className="text-3xl text-primary select-none leading-none">✦</span>
             </div>
             <div className="text-center space-y-1.5">
-              <p className="font-semibold text-foreground/90">Nanobot</p>
+              <p className="font-semibold text-foreground/90">OpenJarvis</p>
               <p className="text-sm text-muted-foreground">{t("chat.noMessages")}</p>
             </div>
           </div>
@@ -148,7 +148,7 @@ export function ChatWindow() {
         {isWaiting && progressText && (
           <div className="mt-4 flex items-start gap-3 px-4">
             <div className="flex h-8 w-8 shrink-0 overflow-hidden rounded-full shadow-sm">
-              <img src="/icon.png" alt="Nanobot" className="h-8 w-8 object-cover mix-blend-multiply dark:mix-blend-screen dark:brightness-150" />
+              <img src="/icon.svg" alt="OpenJarvis" className="h-8 w-8 object-cover mix-blend-multiply dark:mix-blend-screen dark:brightness-150" />
             </div>
             <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-2.5 text-sm text-muted-foreground flex items-center gap-2">
               <span className="flex gap-1">

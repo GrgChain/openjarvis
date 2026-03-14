@@ -54,7 +54,7 @@ function ToolResultBlock({ message }: { message: ChatMessage }) {
       >
         {isError
           ? <XCircle className="h-3 w-3 shrink-0 text-red-500" />
-          : <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500" />}
+          : <CheckCircle2 className="h-3 w-3 shrink-0 text-violet-500" />}
         <span className="font-mono font-medium text-foreground/70 truncate">
           {message.name || "tool"}
         </span>
@@ -148,7 +148,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       )}>
         {isUser
           ? (user?.username?.[0]?.toUpperCase() ?? "U")
-          : <img src="/icon.png" alt="Nanobot" className="h-8 w-8 object-cover mix-blend-multiply dark:mix-blend-screen dark:brightness-150" />}
+          : <img src="/icon.svg" alt="OpenJarvis" className="h-8 w-8 object-cover mix-blend-multiply dark:mix-blend-screen dark:brightness-150" />}
       </div>
 
       {/* Content */}

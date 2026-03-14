@@ -257,7 +257,7 @@ function AgentTab() {
   const [maxTokens, setMaxTokens] = useState("");
   const [temperature, setTemperature] = useState("");
   const [maxToolIter, setMaxToolIter] = useState("");
-  const [memoryWindow, setMemoryWindow] = useState("");
+  const [contextWindow, setContextWindow] = useState("");
   const [reasoningEffort, setReasoningEffort] = useState("__default__");
   const [workspace, setWorkspace] = useState("");
   const [agentInited, setAgentInited] = useState(false);
@@ -273,7 +273,7 @@ function AgentTab() {
     setMaxTokens(String(agent.max_tokens ?? ""));
     setTemperature(String(agent.temperature ?? ""));
     setMaxToolIter(String(agent.max_iterations ?? ""));
-    setMemoryWindow(String(agent.memory_window ?? ""));
+    setContextWindow(String(agent.context_window_tokens ?? ""));
     setReasoningEffort(agent.reasoning_effort || "__default__");
     setWorkspace(agent.workspace ?? "");
     setAgentInited(true);
@@ -286,7 +286,7 @@ function AgentTab() {
       max_tokens: maxTokens ? Number(maxTokens) : undefined,
       temperature: temperature ? Number(temperature) : undefined,
       max_iterations: maxToolIter ? Number(maxToolIter) : undefined,
-      memory_window: memoryWindow ? Number(memoryWindow) : undefined,
+      context_window_tokens: contextWindow ? Number(contextWindow) : undefined,
       reasoning_effort: reasoningEffort && reasoningEffort !== "__default__" ? reasoningEffort : undefined,
       workspace: workspace || undefined,
     }, { onSuccess: () => toast.success(t("settings.saved")) });
@@ -375,8 +375,8 @@ function AgentTab() {
                   <Input type="number" value={maxToolIter} onChange={(e) => setMaxToolIter(e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <Label>{t("settings.memoryWindow")}</Label>
-                  <Input type="number" value={memoryWindow} onChange={(e) => setMemoryWindow(e.target.value)} />
+                  <Label>{t("settings.contextWindow")}</Label>
+                  <Input type="number" value={contextWindow} onChange={(e) => setContextWindow(e.target.value)} />
                 </div>
                 <div className="space-y-1">
                   <Label>{t("settings.reasoningEffort")}</Label>
