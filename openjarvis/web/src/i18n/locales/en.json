@@ -285,7 +285,8 @@
     "importWorkspace": "Import Config",
     "unsaved": "Unsaved changes",
     "selectFile": "Select a file to edit",
-    "confirmDelete": "Are you sure you want to delete \"{{name}}\"?",
+    "confirmDeleteTitle": "Delete File",
+    "confirmDelete": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
     "fileDeleted": "Deleted",
     "deleteFailed": "Failed to delete",
     "wsFiles": {

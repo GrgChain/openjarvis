@@ -279,7 +279,8 @@
     "importWorkspace": "导入配置",
     "unsaved": "未保存",
     "selectFile": "选择文件进行编辑",
-    "confirmDelete": "确定要删除 \"{{name}}\" 吗？",
+    "confirmDeleteTitle": "删除文件",
+    "confirmDelete": "确定要删除 \"{{name}}\" 吗？此操作不可撤销。",
     "fileDeleted": "已删除",
     "deleteFailed": "删除失败",
     "wsFiles": {

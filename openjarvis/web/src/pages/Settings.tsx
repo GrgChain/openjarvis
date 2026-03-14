@@ -16,6 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../components/ui/select";
 import { SecretInput } from "../components/shared/SecretInput";
+import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { isMasked } from "../lib/utils";
 import {
   useProviders,
@@ -562,6 +563,7 @@ function WorkspaceTab() {
   const deleteFile = useDeleteWorkspaceFile();
   const [selected, setSelected] = useState("");
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<{ path: string; name: string } | null>(null);
 
   const toggleDir = (path: string) => {
     setExpandedDirs((prev) => {
@@ -573,15 +575,23 @@ function WorkspaceTab() {
   };
 
   const handleDelete = (path: string, name: string) => {
-    if (!window.confirm(t("settings.confirmDelete", { name }))) return;
-    deleteFile.mutate(path, {
+    setDeleteTarget({ path, name });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteFile.mutate(deleteTarget.path, {
       onSuccess: () => {
         toast.success(t("settings.fileDeleted"));
-        if (selected === path || selected.startsWith(path + "/")) {
+        if (selected === deleteTarget.path || selected.startsWith(deleteTarget.path + "/")) {
           setSelected("");
         }
+        setDeleteTarget(null);
       },
-      onError: () => toast.error(t("settings.deleteFailed")),
+      onError: () => {
+        toast.error(t("settings.deleteFailed"));
+        setDeleteTarget(null);
+      },
     });
   };
 
@@ -590,7 +600,7 @@ function WorkspaceTab() {
   return (
     <div className="flex gap-4" style={{ height: "calc(100vh - 200px)" }}>
       {/* Left nav - tree view */}
-      <div className="w-52 shrink-0 flex flex-col gap-0.5 overflow-y-auto">
+      <div className="flex-1 min-w-0 flex flex-col gap-0.5 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-1">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-7 w-full" />)}</div>
         ) : tree.length === 0 ? (
@@ -612,7 +622,7 @@ function WorkspaceTab() {
       </div>
 
       {/* Right editor */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-[3] min-w-0">
         {selected ? (
           <Card className="h-full">
             <CardHeader className="pb-2">
@@ -628,6 +638,15 @@ function WorkspaceTab() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={t("settings.confirmDeleteTitle")}
+        description={t("settings.confirmDelete", { name: deleteTarget?.name ?? "" })}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+        destructive
+      />
     </div>
   );
 }
