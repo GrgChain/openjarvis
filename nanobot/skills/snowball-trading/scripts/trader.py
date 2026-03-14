@@ -183,6 +183,71 @@ class SnowballTrader:
             )
         return positions
 
+    def show_history(self, count: int = 20):
+        """打印调仓/交易历史记录。"""
+        try:
+            history = self._client.history
+        except Exception as e:
+            print(f"【历史记录】 获取失败: {e}")
+            return []
+
+        if not history:
+            print("【历史记录】 暂无交易记录。")
+            return []
+
+        print("【历史记录】")
+        print(f"  {'时间':<20} {'状态':<8} {'代码':<10} {'名称':<10} {'方向':<6} {'成交价':>10} {'目标权重':>10} {'前权重':>10}")
+        print("  " + "─" * 94)
+
+        displayed = 0
+        for rb in reversed(history):
+            status = rb.get('status', 'unknown')
+            created_at = rb.get('created_at', '')
+            status_label = '✓ 成功' if status == 'success' else ('✗ 失败' if status == 'failed' else status)
+
+            for rh in rb.get('rebalancing_histories', []):
+                if displayed >= count:
+                    break
+                symbol = rh.get('stock_symbol', '')
+                name = rh.get('stock_name', '')
+                price = rh.get('price', 0) or 0
+                volume = rh.get('volume', 0) or 0
+                prev_volume = rh.get('prev_volume', 0) or 0
+                target_weight = rh.get('target_weight', 0) or 0
+                prev_weight = rh.get('prev_weight', 0) or 0
+
+                # 判断方向
+                if prev_weight == 0 or (volume > 0 and prev_volume == 0):
+                    direction = "买入"
+                elif target_weight == 0 or volume == 0:
+                    direction = "卖出"
+                elif target_weight > prev_weight:
+                    direction = "加仓"
+                elif target_weight < prev_weight:
+                    direction = "减仓"
+                else:
+                    direction = "调仓"
+
+                print(
+                    f"  {str(created_at):<20} "
+                    f"{status_label:<8} "
+                    f"{symbol:<10} "
+                    f"{name:<10} "
+                    f"{direction:<6} "
+                    f"{price:>10.3f} "
+                    f"{target_weight:>9.2f}% "
+                    f"{prev_weight:>9.2f}%"
+                )
+                displayed += 1
+
+            if displayed >= count:
+                remaining = sum(len(r.get('rebalancing_histories', [])) for r in history) - displayed
+                if remaining > 0:
+                    print(f"\n  ... 还有 {remaining} 条记录，使用 --count 参数查看更多")
+                break
+
+        return history
+
     def show_balance(self):
         """打印资金状况。"""
         balances = self._client.balance
@@ -259,6 +324,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("position", help="查询持仓")
     sub.add_parser("balance",  help="查询资金")
+
+    s = sub.add_parser("history", help="查询交易历史")
+    s.add_argument("--count", type=int, default=20, help="显示条数 (默认 20)")
+
     return p
 
 
@@ -273,6 +342,7 @@ def main():
         case "cancel":   trader.cancel(args.id)
         case "position": trader.show_position()
         case "balance":  trader.show_balance()
+        case "history":  trader.show_history(count=args.count)
 
 
 if __name__ == "__main__":

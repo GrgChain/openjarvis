@@ -1,6 +1,6 @@
 ---
 name: snowball-trading
-description: Use when the user requests to execute simulated trades, rebalance their portfolio, or query their current positions/running balance on Xueqiu (Snowball).
+description: Use when the user requests to execute simulated trades, rebalance their portfolio, query their current positions/running balance, or view trade history on Xueqiu (Snowball).
 metadata: {"nanobot":{"emoji":"⛄","requires":{"bins":["python"]}}}
 ---
 
@@ -41,6 +41,7 @@ python scripts/trader.py <COMMAND> [--code <SYMBOL>] [--price <PRICE>] [--amount
 | `cancel` | Cancel an unexecuted order | `--id` (optional) |
 | `position` | List all current mock holdings | *None* |
 | `balance` | Check available cash and total market value | *None* |
+| `history` | View trade/rebalancing history | `--count` (optional, default 20) |
 
 ### Examples
 
@@ -67,6 +68,16 @@ python scripts/trader.py adjust --code 000001 --weight 10
 **Liquidate a position completely (set its weight to 0%):**
 ```bash
 python scripts/trader.py adjust --code 000001 --weight 0
+```
+
+**View recent 10 trade records:**
+```bash
+python scripts/trader.py history --count 10
+```
+
+**View all trade history (default 20):**
+```bash
+python scripts/trader.py history
 ```
 
 ## Review Output
