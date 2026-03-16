@@ -315,7 +315,7 @@ async def export_workspace(
                     zf.write(f, f.relative_to(nanobot_dir))
     buf.seek(0)
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"openjarvis_backup_{ts}.zip"
+    filename = f"interclaw_backup_{ts}.zip"
     return StreamingResponse(
         buf,
         media_type="application/zip",
@@ -341,7 +341,7 @@ async def import_workspace(
 
     # Back up the current .nanobot directory before overwriting
     if nanobot_dir.exists() and any(nanobot_dir.iterdir()):
-        backup_dir = nanobot_dir.parent / f".openjarvis_backup_{ts}"
+        backup_dir = nanobot_dir.parent / f".interclaw_backup_{ts}"
         shutil.copytree(nanobot_dir, backup_dir)
         backup_path = str(backup_dir)
 
