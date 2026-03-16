@@ -127,22 +127,23 @@ def get_signals(df, config):
     last = df.iloc[-1]
     signals = []
 
-    kdj_cfg = config['indicators']['kdj']
-    if last['j'] < kdj_cfg['oversold_buy']:
-        signals.append(("LONG", f"KDJ J({last['j']:.1f}) < {kdj_cfg['oversold_buy']}"))
-    elif last['j'] > kdj_cfg['overbought_sell']:
-        signals.append(("SHORT", f"KDJ J({last['j']:.1f}) > {kdj_cfg['overbought_sell']}"))
+    KDJ_OVERSOLD = 25
+    KDJ_OVERBOUGHT = 80
+    if last['j'] < KDJ_OVERSOLD:
+        signals.append(("LONG", f"KDJ J({last['j']:.1f}) < {KDJ_OVERSOLD}"))
+    elif last['j'] > KDJ_OVERBOUGHT:
+        signals.append(("SHORT", f"KDJ J({last['j']:.1f}) > {KDJ_OVERBOUGHT}"))
 
-    rsi_cfg = config['indicators']['rsi']
-    if last['rsi'] < rsi_cfg['oversold']:
-        signals.append(("LONG", f"RSI({last['rsi']:.1f}) < {rsi_cfg['oversold']}"))
-    elif last['rsi'] > rsi_cfg['overbought']:
-        signals.append(("SHORT", f"RSI({last['rsi']:.1f}) > {rsi_cfg['overbought']}"))
+    RSI_OVERSOLD = 30
+    RSI_OVERBOUGHT = 70
+    if last['rsi'] < RSI_OVERSOLD:
+        signals.append(("LONG", f"RSI({last['rsi']:.1f}) < {RSI_OVERSOLD}"))
+    elif last['rsi'] > RSI_OVERBOUGHT:
+        signals.append(("SHORT", f"RSI({last['rsi']:.1f}) > {RSI_OVERBOUGHT}"))
 
-    boll_cfg = config['indicators']['bollinger']
-    if last['close'] <= last['lower'] * boll_cfg['lower_buy_ratio']:
+    if last['close'] <= last['lower']:
         signals.append(("LONG", f"Price({last['close']:.2f}) <= BOLL下轨({last['lower']:.2f})"))
-    elif last['close'] >= last['upper'] * boll_cfg['upper_sell_ratio']:
+    elif last['close'] >= last['upper']:
         signals.append(("SHORT", f"Price({last['close']:.2f}) >= BOLL上轨({last['upper']:.2f})"))
 
     return signals

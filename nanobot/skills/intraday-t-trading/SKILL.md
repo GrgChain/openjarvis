@@ -7,13 +7,13 @@ metadata: {"nanobot":{"emoji":"📈","requires":{"bins":["python"],"env":["TUSHA
 # 科技股做T交易策略 (Tech Stock Intraday T-Trading)
 
 本Skill为光通信/CPO和半导体板块16只核心科技股提供日内做T策略框架。
-股票池、指标阈值、仓位规则等参数见 `configs.json`。
+股票池见 `configs.json`，指标阈值硬编码于扫描脚本中。
 
 ## 买入信号 (正T - Buy First)
 
 必须同时满足:
-1. **KDJ超卖**: J值 < oversold_buy
-2. **价格位置**: 股价 ≤ BOLL下轨 × lower_buy_ratio 或触碰MA30支撑
+1. **KDJ超卖**: J值 < 25
+2. **价格位置**: 股价 ≤ BOLL下轨 或触碰MA30支撑
 3. **量能确认**: 量比 < contraction_threshold (缩量回调)
 4. **大盘环境**: 涨跌家数比 > 1:2
 5. **时间窗口**: 10:00-10:30 或 13:30-14:00
@@ -21,8 +21,8 @@ metadata: {"nanobot":{"emoji":"📈","requires":{"bins":["python"],"env":["TUSHA
 ## 卖出信号 (倒T - Sell First)
 
 必须同时满足:
-1. **KDJ超买**: J值 > overbought_sell
-2. **价格位置**: 股价 ≥ BOLL上轨 × upper_sell_ratio 或触碰前高压力
+1. **KDJ超买**: J值 > 80
+2. **价格位置**: 股价 ≥ BOLL上轨 或触碰前高压力
 3. **量能异常**: 量比 > expansion_threshold (放量滞涨)
 4. **持仓状态**: 已有盈利
 
