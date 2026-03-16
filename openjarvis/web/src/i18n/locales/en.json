@@ -326,7 +326,9 @@
     "deleted": "Deleted",
     "created": "Created",
     "cannotDeleteSelf": "Cannot delete yourself",
-    "cannotDeleteLastAdmin": "Cannot delete the last admin"
+    "cannotDeleteLastAdmin": "Cannot delete the last admin",
+    "usernameRequired": "Username is required",
+    "passwordTooShort": "Password must be at least 6 characters"
   },
   "common": {
     "confirm": "Confirm",

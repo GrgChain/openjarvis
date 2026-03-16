@@ -320,7 +320,9 @@
     "deleted": "删除成功",
     "created": "创建成功",
     "cannotDeleteSelf": "不能删除自己",
-    "cannotDeleteLastAdmin": "不能删除最后一位管理员"
+    "cannotDeleteLastAdmin": "不能删除最后一位管理员",
+    "usernameRequired": "用户名不能为空",
+    "passwordTooShort": "密码至少需要 6 个字符"
   },
   "common": {
     "confirm": "确认",

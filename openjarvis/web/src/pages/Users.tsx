@@ -51,6 +51,18 @@ export default function Users() {
       toast.success(t("users.created"));
       setOpen(false);
     },
+    onError: (err: unknown) => {
+      const resp = (err as { response?: { data?: { detail?: unknown } } })?.response?.data;
+      let msg = t("common.error");
+      if (resp?.detail) {
+        if (typeof resp.detail === "string") {
+          msg = resp.detail;
+        } else if (Array.isArray(resp.detail)) {
+          msg = resp.detail.map((e: { msg?: string }) => e.msg ?? "").filter(Boolean).join("; ");
+        }
+      }
+      toast.error(msg);
+    },
   });
 
   const deleteUser = useMutation({
@@ -72,7 +84,16 @@ export default function Users() {
   const [delTarget, setDelTarget] = useState<string | null>(null);
 
   const handleCreate = () => {
-    createUser.mutate({ username: newUsername, password: newPassword, role: newRole });
+    const username = newUsername.trim();
+    if (!username) {
+      toast.error(t("users.usernameRequired"));
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error(t("users.passwordTooShort"));
+      return;
+    }
+    createUser.mutate({ username, password: newPassword, role: newRole });
   };
 
   return (
@@ -159,7 +180,7 @@ export default function Users() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel")}</Button>
-            <Button onClick={handleCreate} disabled={!newUsername || !newPassword || createUser.isPending}>
+            <Button onClick={handleCreate} disabled={!newUsername.trim() || newPassword.length < 6 || createUser.isPending}>
               {t("common.add")}
             </Button>
           </DialogFooter>
