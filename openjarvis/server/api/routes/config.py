@@ -149,7 +149,33 @@ async def update_gateway_config(
         g.heartbeat.interval_s = body.heartbeat_interval_s
 
     save_config(svc.config)
+
+    # Sync running heartbeat service with updated config
+    hb = svc.heartbeat
+    need_restart = (
+        body.heartbeat_enabled is not None and body.heartbeat_enabled != hb.enabled
+    ) or (
+        body.heartbeat_interval_s is not None and body.heartbeat_interval_s != hb.interval_s
+    )
+    if need_restart:
+        hb.stop()
+        hb.enabled = g.heartbeat.enabled
+        hb.interval_s = g.heartbeat.interval_s
+        await hb.start()
+
     return await get_gateway_config(_admin, svc)
+
+
+@router.post("/heartbeat/trigger")
+async def trigger_heartbeat(
+    _admin: Annotated[dict, Depends(require_admin)],
+    svc: Annotated[ServiceContainer, Depends(get_services)],
+) -> dict:
+    """Manually trigger a heartbeat tick."""
+    if not svc.heartbeat.enabled:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Heartbeat is disabled")
+    result = await svc.heartbeat.trigger_now()
+    return {"result": result or "No active tasks"}
 
 
 @router.get("/workspace-file/{name}")

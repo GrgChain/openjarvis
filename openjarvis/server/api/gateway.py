@@ -38,6 +38,7 @@ class ServiceContainer:
         # Always sync model and other mutable settings
         self.agent.model = d.model
         self.agent.max_iterations = d.max_tool_iterations
+        self.heartbeat.model = d.model
 
 
 async def start_api_server(

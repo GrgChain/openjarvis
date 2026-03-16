@@ -76,8 +76,8 @@ async def get_session_memory(
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Access denied")
 
     workspace = svc.config.workspace_path
-    memory_file = workspace / "MEMORY.md"
-    history_file = workspace / "HISTORY.md"
+    memory_file = workspace / "memory" / "MEMORY.md"
+    history_file = workspace / "memory" / "HISTORY.md"
 
     return {
         "memory": memory_file.read_text(encoding="utf-8") if memory_file.exists() else "",
