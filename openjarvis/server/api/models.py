@@ -281,10 +281,17 @@ class MessageInfo(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class DashboardStats(BaseModel):
-    model: str
-    enabled_channels: int
+class ChannelSummary(BaseModel):
+    """Channel status without config — safe for regular users."""
+    name: str
+    enabled: bool
+    running: bool
+    error: str | None = None
+
+
+class DashboardStatsResponse(BaseModel):
+    channels: list[ChannelSummary]
+    running_channels: int
     total_channels: int
-    sessions_today: int
-    channel_statuses: list[ChannelStatus]
-    recent_sessions: list[SessionInfo]
+    enabled_cron: int
+    total_cron: int

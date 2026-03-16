@@ -36,6 +36,7 @@ def create_app(container: ServiceContainer | None = None) -> FastAPI:
         channels,
         config,
         cron,
+        dashboard,
         files,
         mcp,
         openai_proxy,
@@ -46,6 +47,7 @@ def create_app(container: ServiceContainer | None = None) -> FastAPI:
         ws,
     )
 
+    app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
     app.include_router(config.router, prefix="/api/config", tags=["config"])
     app.include_router(channels.router, prefix="/api/channels", tags=["channels"])

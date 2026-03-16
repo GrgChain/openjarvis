@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { useChannels } from "../hooks/useChannels";
+import { useDashboardStats } from "../hooks/useDashboard";
 import { useSkills } from "../hooks/useSkills";
-import { useCronJobs } from "../hooks/useCron";
 import { useSessions } from "../hooks/useSessions";
+import { useAuthStore } from "../stores/authStore";
 import {
   Card,
   CardContent,
@@ -17,21 +17,22 @@ import { cn } from "../lib/utils";
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { data: channels, isLoading: loadingChannels } = useChannels();
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === "admin";
+  const { data: dashStats, isLoading: loadingStats } = useDashboardStats();
   const { data: skills, isLoading: loadingSkills } = useSkills();
-  const { data: cron, isLoading: loadingCron } = useCronJobs();
   const { data: sessions, isLoading: loadingSessions } = useSessions();
 
-  const runningChannels = channels?.filter((c) => c.running).length ?? 0;
-  const totalChannels = channels?.length ?? 0;
+  const runningChannels = dashStats?.running_channels ?? 0;
+  const totalChannels = dashStats?.total_channels ?? 0;
   const activeSkills = skills?.filter((s) => s.available && s.enabled).length ?? 0;
-  const enabledCron = cron?.filter((j) => j.enabled).length ?? 0;
+  const enabledCron = dashStats?.enabled_cron ?? 0;
   const totalSessions = sessions?.length ?? 0;
 
   const stats = [
     {
       label: t("dashboard.channels"),
-      value: loadingChannels ? null : `${runningChannels} / ${totalChannels}`,
+      value: loadingStats ? null : `${runningChannels} / ${totalChannels}`,
       icon: Radio,
       sub: t("dashboard.running"),
       iconColor: "text-violet-500",
@@ -47,7 +48,7 @@ export default function Dashboard() {
     },
     {
       label: t("dashboard.cronJobs"),
-      value: loadingCron ? null : `${enabledCron}`,
+      value: loadingStats ? null : `${enabledCron}`,
       icon: Clock,
       sub: t("dashboard.active"),
       iconColor: "text-violet-300",
@@ -62,6 +63,8 @@ export default function Dashboard() {
       iconBg: "bg-violet-50 dark:bg-violet-950/50",
     },
   ];
+
+  const channels = dashStats?.channels;
 
   return (
     <div className="space-y-6">
@@ -98,12 +101,14 @@ export default function Dashboard() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base">{t("dashboard.channels")}</CardTitle>
-          <Link to="/channels" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            {t("dashboard.manageChannels")}
-          </Link>
+          {isAdmin && (
+            <Link to="/channels" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              {t("dashboard.manageChannels")}
+            </Link>
+          )}
         </CardHeader>
         <CardContent>
-          {loadingChannels ? (
+          {loadingStats ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="h-24 w-full" />
