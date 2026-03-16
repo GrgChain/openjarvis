@@ -37,7 +37,7 @@
    - 对风险较高的股票，使用adjust命令减仓或清仓（设置weight为0）
    - 优先卖出有风险预警的股票
 4. 买入昨日投资决策股票：
-   - 读取 /root/.nanobot/workspace/decisions/investment_decision_<昨天日期>.json
+   - 读取 /root/.nanobot/workspace/decisions/investment_decision_<上个交易日日期>.json
    - 获取昨日推荐的优质股票列表
    - 计算可用资金，平均分配买入推荐股票（或使用指定权重）
    - 使用buy命令买入，价格设为市价或略低于当前价
@@ -70,7 +70,7 @@
    - 对风险较高的股票，使用adjust命令清仓（设置weight为0）
    - 对当日表现异常（如大跌超过5%）的股票，考虑减仓
 4. 买入昨日投资决策股票：
-   - 读取 /root/.nanobot/workspace/decisions/investment_decision_<昨天日期>.json
+   - 读取 /root/.nanobot/workspace/decisions/investment_decision_<上个交易日日期>.json
    - 获取昨日推荐的优质股票列表
    - 计算可用资金，平均分配买入推荐股票
    - 使用buy命令买入，价格设为市价或根据推荐价格
