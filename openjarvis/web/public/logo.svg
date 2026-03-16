@@ -1,28 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="640" height="160">
   <defs>
-    <linearGradient id="icon-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#06b6d4"/>
-      <stop offset="100%" stop-color="#0891b2"/>
+    <linearGradient id="logo-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
     </linearGradient>
-    <linearGradient id="icon-shine" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+    <linearGradient id="logo-shine" x1="0%" y1="0%" x2="50%" y2="50%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
       <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="8" width="144" height="144" rx="34" ry="34" fill="url(#icon-bg)"/>
-  <rect x="8" y="8" width="144" height="144" rx="34" ry="34" fill="url(#icon-shine)"/>
-  <!-- Crab claw (scaled down) -->
-  <g transform="translate(80,85) scale(0.3)" fill="white" opacity="0.95">
-    <path d="M-30,40 Q-120,-20 -100,-100 Q-90,-140 -50,-130 Q-20,-122 -20,-90 Q-20,-50 -30,40Z"/>
-    <path d="M30,40 Q120,-20 100,-100 Q90,-140 50,-130 Q20,-122 20,-90 Q20,-50 30,40Z"/>
-    <ellipse cx="0" cy="60" rx="65" ry="40"/>
-    <rect x="-80" y="50" width="30" height="8" rx="4" transform="rotate(-20,-65,54)"/>
-    <rect x="-85" y="72" width="28" height="8" rx="4" transform="rotate(5,-71,76)"/>
-    <rect x="50" y="50" width="30" height="8" rx="4" transform="rotate(20,65,54)"/>
-    <rect x="57" y="72" width="28" height="8" rx="4" transform="rotate(-5,71,76)"/>
+
+  <!-- Icon background -->
+  <rect x="8" y="8" width="144" height="144" rx="34" ry="34" fill="url(#logo-bg)"/>
+  <rect x="8" y="8" width="144" height="144" rx="34" ry="34" fill="url(#logo-shine)"/>
+
+  <!-- Crab claw (scaled for logo) -->
+  <g transform="translate(80,80) scale(0.28)">
+    <path d="M-16,80 C-60,40 -130,-30 -120,-100 C-114,-145 -80,-160 -52,-148 C-28,-138 -18,-110 -22,-80 C-24,-60 -30,-30 -16,20Z"
+          fill="white" opacity="0.95"/>
+    <path d="M-16,20 C-40,-10 -58,-50 -48,-82 C-42,-100 -28,-105 -16,-95 C-6,-86 -4,-65 -8,-40 C-10,-20 -14,0 -16,20Z"
+          fill="white" opacity="0.8"/>
+    <path d="M16,80 C60,40 130,-30 120,-100 C114,-145 80,-160 52,-148 C28,-138 18,-110 22,-80 C24,-60 30,-30 16,20Z"
+          fill="white" opacity="0.95"/>
+    <path d="M16,20 C40,-10 58,-50 48,-82 C42,-100 28,-105 16,-95 C6,-86 4,-65 8,-40 C10,-20 14,0 16,20Z"
+          fill="white" opacity="0.8"/>
+    <ellipse cx="0" cy="100" rx="52" ry="32" fill="white" opacity="0.92"/>
+    <line x1="-42" y1="90"  x2="-90" y2="68"  stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.8"/>
+    <line x1="-48" y1="105" x2="-92" y2="96"  stroke="white" stroke-width="9"  stroke-linecap="round" opacity="0.7"/>
+    <line x1="-46" y1="118" x2="-86" y2="122" stroke="white" stroke-width="8"  stroke-linecap="round" opacity="0.6"/>
+    <line x1="42"  y1="90"  x2="90"  y2="68"  stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.8"/>
+    <line x1="48"  y1="105" x2="92"  y2="96"  stroke="white" stroke-width="9"  stroke-linecap="round" opacity="0.7"/>
+    <line x1="46"  y1="118" x2="86"  y2="122" stroke="white" stroke-width="8"  stroke-linecap="round" opacity="0.6"/>
+    <circle cx="-18" cy="82" r="7" fill="#7c3aed" opacity="0.6"/>
+    <circle cx="18"  cy="82" r="7" fill="#7c3aed" opacity="0.6"/>
+    <circle cx="-18" cy="81" r="3" fill="#7c3aed" opacity="0.9"/>
+    <circle cx="18"  cy="81" r="3" fill="#7c3aed" opacity="0.9"/>
   </g>
-  <circle cx="111" cy="42" r="5.4" fill="white" opacity="0.7"/>
-  <circle cx="111" cy="42" r="2.7" fill="white" opacity="0.9"/>
-  <text x="176" y="112" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="64" fill="#06b6d4">Inter</text>
-  <text x="318" y="112" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="64" fill="#0891b2">Claw</text>
+
+  <!-- Brand text -->
+  <text x="176" y="116" font-family="'Inter', Arial, Helvetica, sans-serif" font-weight="800" font-size="80" letter-spacing="-2">
+    <tspan fill="#8b5cf6">Inter</tspan><tspan fill="#a78bfa">Claw</tspan>
+  </text>
 </svg>

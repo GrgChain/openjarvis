@@ -83,20 +83,20 @@ export default function Login() {
         </DropdownMenu>
       </div>
 
-      <Card className="w-full max-w-sm shadow-2xl backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-cyan-200/50 dark:border-cyan-900/50 animate-in fade-in zoom-in duration-500">
+      <Card className="w-full max-w-sm shadow-2xl backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-violet-200/50 dark:border-violet-900/50 animate-in fade-in zoom-in duration-500">
         <CardHeader className="text-center space-y-3 pb-4">
           <div className="flex justify-center">
             <div className="relative">
-              <div className="absolute inset-0 bg-cyan-400/20 dark:bg-cyan-600/20 rounded-2xl blur-xl animate-pulse"></div>
+              <div className="absolute inset-0 bg-violet-400/20 dark:bg-violet-600/20 rounded-2xl blur-xl animate-pulse"></div>
               <img
                 src="/icon.svg"
                 alt="InterClaw"
-                className="relative h-16 w-16 rounded-2xl shadow-lg ring-2 ring-cyan-100 dark:ring-cyan-900/50"
+                className="relative h-16 w-16 rounded-2xl shadow-lg ring-2 ring-violet-100 dark:ring-violet-900/50"
               />
             </div>
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-cyan-500 to-cyan-400 bg-clip-text text-transparent">
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent">
               InterClaw
             </CardTitle>
             <CardDescription className="text-sm mt-1">{t("auth.login")}</CardDescription>

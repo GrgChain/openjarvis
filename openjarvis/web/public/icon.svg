@@ -1,31 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#06b6d4"/>
-      <stop offset="100%" stop-color="#0891b2"/>
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
     </linearGradient>
-    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="50%" y2="50%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
       <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
     </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
+
+  <!-- Background rounded square -->
   <rect x="16" y="16" width="480" height="480" rx="112" ry="112" fill="url(#bg)"/>
   <rect x="16" y="16" width="480" height="480" rx="112" ry="112" fill="url(#shine)"/>
-  <!-- Crab claw -->
-  <g transform="translate(256,270)" fill="white" opacity="0.95">
-    <!-- Left pincer -->
-    <path d="M-30,40 Q-120,-20 -100,-100 Q-90,-140 -50,-130 Q-20,-122 -20,-90 Q-20,-50 -30,40Z"/>
-    <!-- Right pincer -->
-    <path d="M30,40 Q120,-20 100,-100 Q90,-140 50,-130 Q20,-122 20,-90 Q20,-50 30,40Z"/>
-    <!-- Body base -->
-    <ellipse cx="0" cy="60" rx="65" ry="40"/>
-    <!-- Left small leg -->
-    <rect x="-80" y="50" width="30" height="8" rx="4" transform="rotate(-20,-65,54)"/>
-    <rect x="-85" y="72" width="28" height="8" rx="4" transform="rotate(5,-71,76)"/>
-    <!-- Right small leg -->
-    <rect x="50" y="50" width="30" height="8" rx="4" transform="rotate(20,65,54)"/>
-    <rect x="57" y="72" width="28" height="8" rx="4" transform="rotate(-5,71,76)"/>
+
+  <!-- Crab claw icon — stylized dual pincer -->
+  <g transform="translate(256,256)" filter="url(#glow)">
+    <!-- Left pincer arm (outer) -->
+    <path d="M-16,80 C-60,40 -130,-30 -120,-100 C-114,-145 -80,-160 -52,-148 C-28,-138 -18,-110 -22,-80 C-24,-60 -30,-30 -16,20Z"
+          fill="white" opacity="0.95"/>
+    <!-- Left pincer tip (inner tooth) -->
+    <path d="M-16,20 C-40,-10 -58,-50 -48,-82 C-42,-100 -28,-105 -16,-95 C-6,-86 -4,-65 -8,-40 C-10,-20 -14,0 -16,20Z"
+          fill="white" opacity="0.8"/>
+
+    <!-- Right pincer arm (outer) -->
+    <path d="M16,80 C60,40 130,-30 120,-100 C114,-145 80,-160 52,-148 C28,-138 18,-110 22,-80 C24,-60 30,-30 16,20Z"
+          fill="white" opacity="0.95"/>
+    <!-- Right pincer tip (inner tooth) -->
+    <path d="M16,20 C40,-10 58,-50 48,-82 C42,-100 28,-105 16,-95 C6,-86 4,-65 8,-40 C10,-20 14,0 16,20Z"
+          fill="white" opacity="0.8"/>
+
+    <!-- Body / joint -->
+    <ellipse cx="0" cy="100" rx="52" ry="32" fill="white" opacity="0.92"/>
+
+    <!-- Legs — left -->
+    <line x1="-42" y1="90"  x2="-90" y2="68"  stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.8"/>
+    <line x1="-48" y1="105" x2="-92" y2="96"  stroke="white" stroke-width="9"  stroke-linecap="round" opacity="0.7"/>
+    <line x1="-46" y1="118" x2="-86" y2="122" stroke="white" stroke-width="8"  stroke-linecap="round" opacity="0.6"/>
+
+    <!-- Legs — right -->
+    <line x1="42"  y1="90"  x2="90"  y2="68"  stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.8"/>
+    <line x1="48"  y1="105" x2="92"  y2="96"  stroke="white" stroke-width="9"  stroke-linecap="round" opacity="0.7"/>
+    <line x1="46"  y1="118" x2="86"  y2="122" stroke="white" stroke-width="8"  stroke-linecap="round" opacity="0.6"/>
+
+    <!-- Eyes -->
+    <circle cx="-18" cy="82" r="7" fill="#7c3aed" opacity="0.6"/>
+    <circle cx="18"  cy="82" r="7" fill="#7c3aed" opacity="0.6"/>
+    <circle cx="-18" cy="81" r="3" fill="#7c3aed" opacity="0.9"/>
+    <circle cx="18"  cy="81" r="3" fill="#7c3aed" opacity="0.9"/>
   </g>
-  <circle cx="370" cy="140" r="18" fill="white" opacity="0.7"/>
-  <circle cx="370" cy="140" r="9" fill="white" opacity="0.9"/>
 </svg>

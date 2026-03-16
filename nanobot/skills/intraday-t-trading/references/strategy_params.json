@@ -1,0 +1,47 @@
+{
+  "indicators_extended": {
+    "kdj": {
+      "extreme_oversold": 15,
+      "extreme_overbought": 90
+    },
+    "rsi": {
+      "neutral_low": 40,
+      "neutral_high": 60
+    },
+    "volume": {
+      "contraction_threshold": 0.8,
+      "expansion_threshold": 1.5
+    }
+  },
+  "trading_rules": {
+    "long_t": {
+      "target_profit_pct": 1.5,
+      "stop_loss_pct": -1.5,
+      "max_daily_per_stock": 2,
+      "time_windows": ["10:00-10:30", "13:30-14:00"]
+    },
+    "short_t": {
+      "target_profit_pct": 1.5,
+      "give_up_buyback_pct": 2.0,
+      "max_daily_per_stock": 1,
+      "time_windows": ["10:00-10:30", "13:30-14:00"]
+    }
+  },
+  "risk_management": {
+    "max_daily_loss_pct": 3.0,
+    "max_consecutive_errors": 3,
+    "prohibited_conditions": [
+      "price_below_ma60",
+      "sector_decline_gt_3pct",
+      "gap_down_gt_4pct",
+      "limit_up_or_down",
+      "volume_below_20pct_of_avg"
+    ]
+  },
+  "position_sizing": {
+    "base_position_pct": 60,
+    "t_trading_pool_pct": 40,
+    "single_trade_pct_of_base": 25,
+    "single_trade_pct_of_pool": 25
+  }
+}
