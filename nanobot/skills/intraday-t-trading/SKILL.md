@@ -53,7 +53,21 @@ python scripts/t_trading_scanner.py
 
 # 扫描特定标的
 python scripts/t_trading_scanner.py --symbol 300308
+
+# JSON 结构化输出（适合程序解析）
+python scripts/t_trading_scanner.py --json
 ```
+
+### 扫描器输出说明
+
+扫描器 V4.0 提供综合评分系统：
+
+- **Score**: 综合评分 -100~+100，由 KDJ(±30) + RSI(±25) + BOLL(±25) + 量比确认(±20) 加权
+- **Dir**: 方向判定，Score ≥20 → LONG，≤-20 → SHORT，其余 NEUTRAL
+- **VR**: 量比（当日量/20日均量），缩量 <1，放量 >1
+- **禁止条件检测**: 自动检查 MA60 下方、低开 >4%、接近涨跌停、量能萎缩等
+
+`--json` 模式输出包含 `scan_time`、`time_window`、`stocks[]`（含 signal/warnings）、`summary` 统计。
 
 ### 盘中时间窗口
 
