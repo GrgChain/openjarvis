@@ -15,6 +15,26 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 
+def load_watchlist():
+    """从 SKILL.md frontmatter 的 metadata.nanobot.watchlist 读取股票池"""
+    skill_md = Path(__file__).resolve().parent.parent / "SKILL.md"
+    text = skill_md.read_text(encoding="utf-8")
+    # 解析 YAML frontmatter 中的 metadata 行
+    in_front = False
+    for line in text.splitlines():
+        if line.strip() == "---":
+            if not in_front:
+                in_front = True
+                continue
+            else:
+                break
+        if in_front and line.startswith("metadata:"):
+            meta = json.loads(line[len("metadata:"):].strip())
+            return meta["nanobot"]["watchlist"]
+    print("Error: 无法从 SKILL.md 读取 watchlist")
+    sys.exit(1)
+
+
 def init_tushare():
     token = os.environ.get("TUSHARE_TOKEN", "")
     if not token:
@@ -123,7 +143,7 @@ def calculate_bollinger(df, n=20, k=2):
 
 # ── 信号判断 ──
 
-def get_signals(df, config):
+def get_signals(df):
     last = df.iloc[-1]
     signals = []
 
@@ -151,7 +171,7 @@ def get_signals(df, config):
 
 # ── 主流程 ──
 
-def scan_stock(pro, code, name, config, rt):
+def scan_stock(pro, code, name, rt):
     hist = fetch_history(pro, code)
     if hist is None or len(hist) < 30:
         return None
@@ -162,7 +182,7 @@ def scan_stock(pro, code, name, config, rt):
     df = calculate_macd(df)
     df = calculate_bollinger(df)
 
-    signals = get_signals(df, config)
+    signals = get_signals(df)
     last = df.iloc[-1]
 
     return {
@@ -180,25 +200,16 @@ def scan_stock(pro, code, name, config, rt):
 def main():
     parser = argparse.ArgumentParser(description="T-Trading Scanner (realtime)")
     parser.add_argument("--symbol", type=str, help="扫描指定股票代码")
-    parser.add_argument("--config", type=str, default="configs.json")
     args = parser.parse_args()
 
-    script_dir = Path(__file__).parent
-    config_path = script_dir.parent / args.config
-    if not config_path.exists():
-        print(f"Error: {config_path} not found.")
-        return
-
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
-
     pro = init_tushare()
+    wl_config = load_watchlist()
 
     # 构建扫描列表
     watchlist = []
     if args.symbol:
         found = False
-        for cat in config['watchlist'].values():
+        for cat in wl_config.values():
             for item in cat:
                 if item['code'] == args.symbol:
                     watchlist.append(item)
@@ -209,7 +220,7 @@ def main():
         if not found:
             watchlist.append({"code": args.symbol, "name": "Unknown"})
     else:
-        for cat in config['watchlist'].values():
+        for cat in wl_config.values():
             watchlist.extend(cat)
 
     # 批量获取实时行情
@@ -228,7 +239,7 @@ def main():
         if not rt or rt['price'] <= 0:
             print(f"{code:<8} {item['name']:<10} {'N/A':>8}")
             continue
-        res = scan_stock(pro, code, item['name'], config, rt)
+        res = scan_stock(pro, code, item['name'], rt)
         if not res:
             print(f"{code:<8} {item['name']:<10} {'N/A':>8}")
             continue
