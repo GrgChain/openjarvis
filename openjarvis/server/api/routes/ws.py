@@ -68,7 +68,6 @@ async def _auth_websocket(websocket: WebSocket) -> dict | None:
         return None
 
     from server.api.auth import decode_access_token
-    from server.api.users import UserStore
     import jwt
 
     user_store = websocket.app.state.user_store
@@ -86,6 +85,23 @@ async def _auth_websocket(websocket: WebSocket) -> dict | None:
     return user
 
 
+async def _archive_session(container: Any, session_key: str) -> bool:
+    """Archive unconsolidated messages of a session (like CLI /new command)."""
+    session = container.session_manager.get_or_create(session_key)
+    if not session.messages:
+        return True
+    try:
+        ok = await container.agent.memory_consolidator.archive_unconsolidated(session)
+        if ok:
+            session.clear()
+            container.session_manager.save(session)
+            container.session_manager.invalidate(session_key)
+        return ok
+    except Exception:
+        logger.exception("Memory archival failed for {}", session_key)
+        return False
+
+
 @router.websocket("/ws/chat")
 async def ws_chat(websocket: WebSocket) -> None:
     """
@@ -96,7 +112,7 @@ async def ws_chat(websocket: WebSocket) -> None:
       session=<session_key>    — optional; if omitted a new ``web:<uid>:<uuid>`` key is created
 
     Client → Server frames (JSON):
-      {"type": "message", "content": "..."}
+      {"type": "message", "content": "...", "session_key": "..."}
       {"type": "cancel"}
       {"type": "new_session"}
 
@@ -121,6 +137,9 @@ async def ws_chat(websocket: WebSocket) -> None:
     # Patch MessageTool once so web-channel replies are captured (not dropped)
     _ensure_message_tool_patched(container)
 
+    # Read progress config flags
+    channels_cfg = container.config.channels
+
     # Determine or create session key
     requested_key: str | None = websocket.query_params.get("session")
     session_key = (
@@ -144,8 +163,12 @@ async def ws_chat(websocket: WebSocket) -> None:
                     await websocket.send_json({"type": "error", "content": "cancelled"})
 
             elif msg_type == "new_session":
+                # Archive memory from old session before switching (like CLI /new)
+                old_key = session_key
                 session_key = f"web:{user['id']}:{uuid.uuid4().hex[:8]}"
                 await websocket.send_json({"type": "session_info", "session_key": session_key})
+                # Archive in background — don't block the new session
+                asyncio.create_task(_archive_session(container, old_key))
 
             elif msg_type == "message":
                 content = raw.get("content", "")
@@ -168,6 +191,11 @@ async def ws_chat(websocket: WebSocket) -> None:
 
                 async def _on_progress(text: str, *, tool_hint: bool = False) -> None:
                     try:
+                        # Respect send_progress / send_tool_hints config (like CLI)
+                        if tool_hint and not getattr(channels_cfg, "send_tool_hints", False):
+                            return
+                        if not tool_hint and not getattr(channels_cfg, "send_progress", True):
+                            return
                         await websocket.send_json({
                             "type": "progress",
                             "content": text,
