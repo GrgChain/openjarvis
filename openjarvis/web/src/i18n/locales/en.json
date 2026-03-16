@@ -154,7 +154,7 @@
     "title": "Tools"
   },
   "setupGuide": {
-    "title": "Welcome to OpenJarvis",
+    "title": "Welcome to InterClaw",
     "description": "Complete the following setup to start using AI assistant features.",
     "step1Title": "Configure Model Provider",
     "step1Description": "Select and configure at least one AI model provider (e.g., OpenAI, Anthropic) and enter your API Key.",
@@ -164,7 +164,7 @@
     "complete": "Complete",
     "mustComplete": "Please complete the setup to continue",
     "agentConfigRequired": "Please select provider and enter model name",
-    "setupComplete": "Setup complete! Welcome to OpenJarvis"
+    "setupComplete": "Setup complete! Welcome to InterClaw"
   },
   "providers": {
     "configured": "Configured",

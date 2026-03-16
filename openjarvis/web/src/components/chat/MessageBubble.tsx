@@ -148,7 +148,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       )}>
         {isUser
           ? (user?.username?.[0]?.toUpperCase() ?? "U")
-          : <img src="/icon.svg" alt="OpenJarvis" className="h-8 w-8 object-cover mix-blend-multiply dark:mix-blend-screen dark:brightness-150" />}
+          : <img src="/icon.svg" alt="InterClaw" className="h-8 w-8 object-cover mix-blend-multiply dark:mix-blend-screen dark:brightness-150" />}
       </div>
 
       {/* Content */}

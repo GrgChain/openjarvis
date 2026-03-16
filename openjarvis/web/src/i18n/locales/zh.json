@@ -156,7 +156,7 @@
     "title": "工具"
   },
   "setupGuide": {
-    "title": "欢迎使用 OpenJarvis",
+    "title": "欢迎使用 InterClaw",
     "description": "首次使用需要完成以下配置，才能开始使用 AI 助手功能。",
     "step1Title": "配置模型提供商",
     "step1Description": "选择并配置至少一个 AI 模型提供商（如 OpenAI、Anthropic 等），填入 API Key。",
@@ -166,7 +166,7 @@
     "complete": "完成",
     "mustComplete": "请完成配置后再继续",
     "agentConfigRequired": "请选择提供商和填写模型名称",
-    "setupComplete": "配置完成！欢迎使用 OpenJarvis"
+    "setupComplete": "配置完成！欢迎使用 InterClaw"
   },
   "mcp": {
     "title": "MCP 服务器",
