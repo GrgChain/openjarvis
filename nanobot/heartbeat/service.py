@@ -130,15 +130,18 @@ class HeartbeatService:
 
     async def _run_loop(self) -> None:
         """Main heartbeat loop."""
+        # Execute first tick immediately on startup, then sleep between ticks.
         while self._running:
             try:
-                await asyncio.sleep(self.interval_s)
-                if self._running:
-                    await self._tick()
+                await self._tick()
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error("Heartbeat error: {}", e)
+            try:
+                await asyncio.sleep(self.interval_s)
+            except asyncio.CancelledError:
+                break
 
     async def _tick(self) -> None:
         """Execute a single heartbeat tick."""

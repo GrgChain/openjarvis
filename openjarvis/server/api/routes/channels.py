@@ -19,12 +19,22 @@ _CHANNEL_NAMES = [
 ]
 
 
+def _get_enabled(ch_cfg: Any) -> bool:
+    """Safely read 'enabled' from a channel config (Pydantic model or dict)."""
+    if isinstance(ch_cfg, dict):
+        return ch_cfg.get("enabled", True)
+    return getattr(ch_cfg, "enabled", True)
+
+
 def _channel_config_dict(name: str, svc: ServiceContainer) -> dict[str, Any]:
     """Return the channel config as a dict (camelCase keys, secrets masked)."""
     cfg = getattr(svc.config.channels, name, None)
     if cfg is None:
         return {}
-    raw: dict[str, Any] = cfg.model_dump(by_alias=True)
+    if isinstance(cfg, dict):
+        raw = dict(cfg)
+    else:
+        raw = cfg.model_dump(by_alias=True)
     # Mask common secret fields
     for key in ("token", "appSecret", "secret", "imapPassword", "smtpPassword",
                 "bridgeToken", "accessToken", "appToken", "botToken"):
@@ -49,7 +59,7 @@ async def list_channels(
         result.append(
             ChannelStatus(
                 name=name,
-                enabled=ch_cfg.enabled,
+                enabled=_get_enabled(ch_cfg),
                 running=running_info.get("running", False),
                 config=_channel_config_dict(name, svc),
             )
@@ -74,7 +84,7 @@ async def update_channel(
     # Use by_alias=True (camelCase) so that merging camelCase payload keys from
     # the frontend never produces duplicate snake_case + camelCase entries for
     # the same field, which would cause Pydantic v2 to raise a ValidationError.
-    updated = ch_cfg.model_dump(by_alias=True)
+    updated = dict(ch_cfg) if isinstance(ch_cfg, dict) else ch_cfg.model_dump(by_alias=True)
     # Handle top-level enabled toggle
     if body.enabled is not None:
         updated["enabled"] = body.enabled
@@ -91,10 +101,13 @@ async def update_channel(
                 v = [x.strip() for x in v.split(",") if x.strip()]
         updated[k] = v
 
-    try:
-        new_cfg = type(ch_cfg).model_validate(updated)
-    except Exception as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+    if isinstance(ch_cfg, dict):
+        new_cfg = updated
+    else:
+        try:
+            new_cfg = type(ch_cfg).model_validate(updated)
+        except Exception as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
 
     setattr(svc.config.channels, name, new_cfg)
     save_config(svc.config)
@@ -103,7 +116,7 @@ async def update_channel(
     running_info = status_map.get(name, {})
     return ChannelStatus(
         name=name,
-        enabled=new_cfg.enabled,
+        enabled=_get_enabled(new_cfg),
         running=running_info.get("running", False),
         config=_channel_config_dict(name, svc),
     )
@@ -125,7 +138,7 @@ async def reload_channel(
     running_info = status_map.get(name, {})
     return ChannelStatus(
         name=name,
-        enabled=ch_cfg.enabled,
+        enabled=_get_enabled(ch_cfg),
         running=running_info.get("running", False),
         config=_channel_config_dict(name, svc),
     )
