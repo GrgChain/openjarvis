@@ -11,4 +11,5 @@ export const CHANNEL_ICONS: Record<string, string> = {
   matrix: "🔷",
   mochat: "💼",
   cron: "⏰",
+  heartbeat: "💓",
 };

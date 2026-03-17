@@ -355,6 +355,7 @@ async def main(
     )
 
     # ------------------------------------------------------------------ cron
+    _agent_lock = asyncio.Lock()  # serialize process_direct calls (heartbeat / cron / web)
     _container_ref: dict[str, Any] = {}  # lazy ref, set after ServiceContainer is created
 
     async def _archive_session(session_key: str) -> None:
@@ -363,7 +364,7 @@ async def main(
             session = session_manager.get_or_create(session_key)
             if not session.messages:
                 return
-            ok = await agent.memory_consolidator.archive_unconsolidated(session)
+            ok = await agent.memory_consolidator.archive_messages(session.messages)
             if ok:
                 session.clear()
                 session_manager.save(session)
@@ -387,12 +388,13 @@ async def main(
             cron_token = cron_tool.set_cron_context(True)
         session_key = f"cron:{job.id}"
         try:
-            response = await agent.process_direct(
-                reminder_note,
-                session_key=session_key,
-                channel=job.payload.channel or "cli",
-                chat_id=job.payload.to or "direct",
-            )
+            async with _agent_lock:
+                response = await agent.process_direct(
+                    reminder_note,
+                    session_key=session_key,
+                    channel=job.payload.channel or "cli",
+                    chat_id=job.payload.to or "direct",
+                )
         finally:
             if isinstance(cron_tool, CronTool) and cron_token is not None:
                 cron_tool.reset_cron_context(cron_token)
@@ -445,13 +447,14 @@ async def main(
         async def _silent(*_args: object, **_kwargs: object) -> None:
             pass
 
-        response = await agent.process_direct(
-            tasks,
-            session_key="heartbeat",
-            channel=channel,
-            chat_id=chat_id,
-            on_progress=_silent,
-        )
+        async with _agent_lock:
+            response = await agent.process_direct(
+                tasks,
+                session_key="heartbeat",
+                channel=channel,
+                chat_id=chat_id,
+                on_progress=_silent,
+            )
 
         # Archive heartbeat session to HISTORY.md after execution
         asyncio.create_task(_archive_session("heartbeat"))
@@ -484,6 +487,7 @@ async def main(
         cron=cron,
         heartbeat=heartbeat,
         make_provider=_make_provider,
+        agent_lock=_agent_lock,
     )
     _container_ref["svc"] = container
 

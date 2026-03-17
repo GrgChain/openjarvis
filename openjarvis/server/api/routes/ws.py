@@ -212,13 +212,14 @@ async def ws_chat(websocket: WebSocket) -> None:
                     uid = str(user["id"])
                     _web_captures.setdefault(uid, []).append(capture_q)
                     try:
-                        response = await container.agent.process_direct(
-                            msg,
-                            session_key=sess,
-                            channel="web",
-                            chat_id=user["id"],
-                            on_progress=_on_progress,
-                        )
+                        async with container.agent_lock:
+                            response = await container.agent.process_direct(
+                                msg,
+                                session_key=sess,
+                                channel="web",
+                                chat_id=user["id"],
+                                on_progress=_on_progress,
+                            )
                         # If the agent replied via message() tool, process_direct
                         # returns "".  Drain whatever the patched callback captured.
                         if not response:
