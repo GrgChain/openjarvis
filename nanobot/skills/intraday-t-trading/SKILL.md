@@ -1,12 +1,12 @@
 ---
 name: intraday-t-trading
 description: Execute intraday T-trading (做T) strategies for tech stocks. Use when the user requests to perform day trading, scalp trading, or intraday buy-low-sell-high operations on volatile tech stocks (CPO, semiconductor, optics). Provides signal generation, position sizing, risk management, and execution checklists for both "正T" (buy-first) and "倒T" (sell-first) operations.
-metadata: {"nanobot":{"emoji":"📈","requires":{"bins":["python"],"env":["TUSHARE_TOKEN"]},"watchlist":{"cpo_optical":[{"code":"300308","name":"中际旭创"},{"code":"688205","name":"德科立"},{"code":"688195","name":"腾景科技"},{"code":"300620","name":"光库科技"},{"code":"300757","name":"罗博特科"},{"code":"688313","name":"仕佳光子"},{"code":"688498","name":"源杰科技"},{"code":"688048","name":"长光华芯"},{"code":"000988","name":"华工科技"},{"code":"002281","name":"光迅科技"}],"semiconductor":[{"code":"603986","name":"兆易创新"},{"code":"688008","name":"澜起科技"},{"code":"300456","name":"赛微电子"},{"code":"600330","name":"天通股份"},{"code":"688025","name":"杰普特"},{"code":"000021","name":"深科技"}]}}}
+metadata: {"nanobot":{"emoji":"📈","requires":{"bins":["python"],"env":["TUSHARE_TOKEN"]},"watchlist":{"cpo_optical":[{"code":"300308","name":"中际旭创"},{"code":"300502","name":"新易盛"},{"code":"300394","name":"天孚通信"},{"code":"688205","name":"德科立"},{"code":"688195","name":"腾景科技"},{"code":"300620","name":"光库科技"},{"code":"300757","name":"罗博特科"},{"code":"688313","name":"仕佳光子"},{"code":"688498","name":"源杰科技"},{"code":"688048","name":"长光华芯"},{"code":"000988","name":"华工科技"},{"code":"002281","name":"光迅科技"}],"semiconductor":[{"code":"603986","name":"兆易创新"},{"code":"688008","name":"澜起科技"},{"code":"300456","name":"赛微电子"},{"code":"600330","name":"天通股份"},{"code":"688025","name":"杰普特"},{"code":"000021","name":"深科技"}]}}}
 ---
 
 # 科技股做T交易策略 (Tech Stock Intraday T-Trading)
 
-本Skill为光通信/CPO和半导体板块16只核心科技股提供日内做T策略框架。
+本Skill为光通信/CPO和半导体板块18只核心科技股提供日内做T策略框架。
 股票池配置于本文件 metadata.nanobot.watchlist 中，指标阈值硬编码于扫描脚本。
 
 ## 买入信号 (正T - Buy First)
