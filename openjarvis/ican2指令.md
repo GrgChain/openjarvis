@@ -14,7 +14,7 @@
 【雪球做T策略】执行任务：
 1. 读取今天的全球市场简报报告（/root/.nanobot/workspace/global-market-brief/reports/global-market-brief-YYYYMMDD.md）作为今日基调
 2. 执行做T策略扫描：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/intraday-t-trading/scripts/t_trading_scanner.py --json
-3. 结合全球市场简报和扫描结果，生成做T策略报告（包含正T/倒T信号、风险提示、仓位建议），保存到/root/.nanobot/workspace/t-trading-report/t-trading-report-YYYYMMDD-hhmm.md
+3. 结合全球市场简报和扫描结果，生成做T策略报告（包含正T/倒T信号、风险提示、仓位建议），保存到/root/.nanobot/workspace/t_trading_report/t_trading_report-YYYYMMDD-hhmm.md
 4. 根据做T策略报告中的LONG/SHORT信号，在雪球模拟盘上执行相应做T操作（使用snowball-trading skill的adjust/buy/sell命令）
 5. 严格遵守做T策略报告中的时间窗口：
 ### 盘中时间窗口
@@ -30,6 +30,6 @@
 **正T**: J值25下缩量买，下轨附近入两点卖，一点五止损纪律牢
 **倒T**: J值80上放量卖，两点买回不追高，突破两放弃现金王
 **停手**: 大盘跌超2%全停，个股跌停不碰，连错三把先冷静，尾盘半小时不新开
-6. 保存操作日志到 /root/.nanobot/workspace/trading-log/t-trading-YYYYMMDD-hhmm.md
+6. 保存操作日志到 /root/.nanobot/workspace/trading_log/t_trading_YYYYMMDD-hhmm.md
 
 
