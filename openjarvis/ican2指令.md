@@ -1,4 +1,4 @@
-【全球市场简报】获取并生成全球市场分析报告
+创建定时任务每日8点【全球市场简报】获取并生成全球市场分析报告
 
 【全球市场简报-每日8点】获取并生成全球市场分析报告：
 1. 获取关键人物新闻（Sam Altman, Greg Brockman, Elon Musk, Donald Trump, Sundar Pichai, Tim Cook, Jensen Huang, Jerome Powell, Mark Zuckerberg），每人最新2篇
