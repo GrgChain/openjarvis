@@ -60,7 +60,7 @@ python scripts/t_trading_scanner.py --json
 
 ### 扫描器输出说明
 
-扫描器 V4.0 提供综合评分系统：
+扫描器提供综合评分系统：
 
 - **Score**: 综合评分 -100~+100，由 KDJ(±30) + RSI(±25) + BOLL(±25) + 量比确认(±20) 加权
 - **Dir**: 方向判定，Score ≥20 → LONG，≤-20 → SHORT，其余 NEUTRAL
