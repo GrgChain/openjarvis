@@ -52,6 +52,22 @@ def _apply_patches() -> None:
     # all subsequent calls for this api_base go directly to the right endpoint.
     _patch_responses_api_fallback()
 
+    # Patch 5: Ensure assistant messages with tool_calls always carry
+    # reasoning_content (Moonshot and other reasoning models require it;
+    # without it litellm injects a placeholder and logs a noisy WARNING).
+    from nanobot.utils import helpers as _helpers
+
+    _orig_build = _helpers.build_assistant_message
+
+    def _build_with_reasoning(
+        content, tool_calls=None, reasoning_content=None, thinking_blocks=None,
+    ):
+        if tool_calls and reasoning_content is None:
+            reasoning_content = ""
+        return _orig_build(content, tool_calls, reasoning_content, thinking_blocks)
+
+    _helpers.build_assistant_message = _build_with_reasoning  # type: ignore[assignment]
+
 
 def _patch_responses_api_fallback() -> None:
     """Monkey-patch CustomProvider and LiteLLMProvider to auto-fall-back to Responses API."""
