@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import sys
 from pathlib import Path
+from typing import Any
 
 
 def _apply_patches() -> None:
@@ -354,6 +355,23 @@ async def main(
     )
 
     # ------------------------------------------------------------------ cron
+    _container_ref: dict[str, Any] = {}  # lazy ref, set after ServiceContainer is created
+
+    async def _archive_session(session_key: str) -> None:
+        """Archive session messages to MEMORY.md + HISTORY.md (like Feishu/CLI /new)."""
+        try:
+            session = session_manager.get_or_create(session_key)
+            if not session.messages:
+                return
+            ok = await agent.memory_consolidator.archive_unconsolidated(session)
+            if ok:
+                session.clear()
+                session_manager.save(session)
+                session_manager.invalidate(session_key)
+                logger.debug("Archived session {} to HISTORY.md", session_key)
+        except Exception:
+            logger.exception("Failed to archive session {}", session_key)
+
     async def on_cron_job(job: CronJob) -> str | None:
         from nanobot.agent.tools.cron import CronTool
         from nanobot.agent.tools.message import MessageTool
@@ -367,16 +385,28 @@ async def main(
         cron_token = None
         if isinstance(cron_tool, CronTool):
             cron_token = cron_tool.set_cron_context(True)
+        session_key = f"cron:{job.id}"
         try:
             response = await agent.process_direct(
                 reminder_note,
-                session_key=f"cron:{job.id}",
+                session_key=session_key,
                 channel=job.payload.channel or "cli",
                 chat_id=job.payload.to or "direct",
             )
         finally:
             if isinstance(cron_tool, CronTool) and cron_token is not None:
                 cron_tool.reset_cron_context(cron_token)
+
+        # Archive cron session to HISTORY.md after execution
+        asyncio.create_task(_archive_session(session_key))
+
+        # Update HEARTBEAT.md with latest cron job status
+        try:
+            from server.api.routes.cron import _sync_heartbeat_file
+            if _container_ref.get("svc"):
+                _sync_heartbeat_file(_container_ref["svc"])
+        except Exception:
+            pass
 
         message_tool = agent.tools.get("message")
         if isinstance(message_tool, MessageTool) and message_tool._sent_in_turn:
@@ -415,13 +445,18 @@ async def main(
         async def _silent(*_args: object, **_kwargs: object) -> None:
             pass
 
-        return await agent.process_direct(
+        response = await agent.process_direct(
             tasks,
             session_key="heartbeat",
             channel=channel,
             chat_id=chat_id,
             on_progress=_silent,
         )
+
+        # Archive heartbeat session to HISTORY.md after execution
+        asyncio.create_task(_archive_session("heartbeat"))
+
+        return response
 
     async def on_heartbeat_notify(response: str) -> None:
         channel, chat_id = _pick_heartbeat_target()
@@ -450,6 +485,7 @@ async def main(
         heartbeat=heartbeat,
         make_provider=_make_provider,
     )
+    _container_ref["svc"] = container
 
     if channels.enabled_channels:
         logger.info("Channels enabled: {}", ", ".join(channels.enabled_channels))

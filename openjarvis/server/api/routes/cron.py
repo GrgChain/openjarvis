@@ -18,22 +18,53 @@ router = APIRouter()
 
 
 def _sync_heartbeat_file(svc: ServiceContainer) -> None:
-    """Regenerate HEARTBEAT.md Active Tasks section from current cron jobs.
+    """Regenerate HEARTBEAT.md from cron jobs + MEMORY.md context.
 
-    Called after every cron CRUD operation so the heartbeat service
-    sees up-to-date task data without modifying any nanobot source files.
+    Includes long-term memory so the heartbeat LLM has the same context
+    as the full agent (like Feishu channel flow), without modifying nanobot.
     """
     jobs = svc.cron.list_jobs(include_disabled=True)
-    hb_path = svc.config.workspace_path / "HEARTBEAT.md"
+    workspace = svc.config.workspace_path
+    hb_path = workspace / "HEARTBEAT.md"
 
     lines = [
         "# Heartbeat Tasks",
         "",
-        "This file is automatically synced with cron jobs.",
-        "",
-        "## Active Tasks",
+        "This file is automatically synced with cron jobs and agent memory.",
         "",
     ]
+
+    # ── Include long-term memory (like ContextBuilder does for Feishu) ──
+    memory_file = workspace / "memory" / "MEMORY.md"
+    if memory_file.exists():
+        try:
+            memory_content = memory_file.read_text(encoding="utf-8").strip()
+            if memory_content:
+                lines.append("## Agent Memory")
+                lines.append("")
+                lines.append(memory_content)
+                lines.append("")
+        except Exception:
+            pass
+
+    # ── Recent history for context ──
+    history_file = workspace / "memory" / "HISTORY.md"
+    if history_file.exists():
+        try:
+            history_content = history_file.read_text(encoding="utf-8").strip()
+            if history_content:
+                # Only include last 2000 chars to avoid bloating the file
+                tail = history_content[-2000:] if len(history_content) > 2000 else history_content
+                lines.append("## Recent History")
+                lines.append("")
+                lines.append(tail)
+                lines.append("")
+        except Exception:
+            pass
+
+    # ── Active cron tasks ──
+    lines.append("## Active Tasks")
+    lines.append("")
 
     enabled_jobs = [j for j in jobs if j.enabled]
     disabled_jobs = [j for j in jobs if not j.enabled]
