@@ -458,6 +458,10 @@ async def main(
 
     logger.info("Starting nanobot server on http://{}:{}", web_host, web_port)
 
+    # Sync HEARTBEAT.md with existing cron jobs on startup
+    from server.api.routes.cron import _sync_heartbeat_file
+    _sync_heartbeat_file(container)
+
     async def run() -> None:
         try:
             await cron.start()

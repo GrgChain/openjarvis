@@ -2,17 +2,87 @@
 
 from __future__ import annotations
 
+import datetime
 import time
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from loguru import logger
 
 from server.api.deps import get_services, require_admin
 from server.api.gateway import ServiceContainer
 from server.api.models import CronJobInfo, CronJobRequest, CronScheduleModel, CronStateModel, CronPayloadModel
 
 router = APIRouter()
+
+
+def _sync_heartbeat_file(svc: ServiceContainer) -> None:
+    """Regenerate HEARTBEAT.md Active Tasks section from current cron jobs.
+
+    Called after every cron CRUD operation so the heartbeat service
+    sees up-to-date task data without modifying any nanobot source files.
+    """
+    jobs = svc.cron.list_jobs(include_disabled=True)
+    hb_path = svc.config.workspace_path / "HEARTBEAT.md"
+
+    lines = [
+        "# Heartbeat Tasks",
+        "",
+        "This file is automatically synced with cron jobs.",
+        "",
+        "## Active Tasks",
+        "",
+    ]
+
+    enabled_jobs = [j for j in jobs if j.enabled]
+    disabled_jobs = [j for j in jobs if not j.enabled]
+
+    if enabled_jobs:
+        for j in enabled_jobs:
+            sched = j.schedule
+            if sched.kind == "cron" and sched.expr:
+                sched_str = f"cron `{sched.expr}`"
+            elif sched.kind == "interval" and sched.every_ms:
+                mins = sched.every_ms // 60_000
+                sched_str = f"every {mins}m" if mins else f"every {sched.every_ms}ms"
+            elif sched.kind == "once" and sched.at_ms:
+                dt = datetime.datetime.fromtimestamp(sched.at_ms / 1000)
+                sched_str = f"once at {dt:%Y-%m-%d %H:%M}"
+            else:
+                sched_str = sched.kind
+
+            status_str = ""
+            if j.state.last_status:
+                status_str = f" (last: {j.state.last_status})"
+            if j.state.next_run_at_ms:
+                next_dt = datetime.datetime.fromtimestamp(j.state.next_run_at_ms / 1000)
+                status_str += f" → next: {next_dt:%Y-%m-%d %H:%M}"
+
+            lines.append(f"- **{j.name}** [{sched_str}]{status_str}")
+            lines.append(f"  - {j.payload.message}")
+    else:
+        lines.append("<!-- No active cron jobs -->")
+
+    lines.append("")
+
+    if disabled_jobs:
+        lines.append("## Disabled")
+        lines.append("")
+        for j in disabled_jobs:
+            lines.append(f"- ~~{j.name}~~ — {j.payload.message}")
+        lines.append("")
+
+    lines.append("## Completed")
+    lines.append("")
+    lines.append("<!-- Move completed tasks here or delete them -->")
+    lines.append("")
+
+    try:
+        hb_path.parent.mkdir(parents=True, exist_ok=True)
+        hb_path.write_text("\n".join(lines), encoding="utf-8")
+    except Exception:
+        logger.exception("Failed to sync HEARTBEAT.md")
 
 
 def _to_info(job) -> CronJobInfo:
@@ -84,6 +154,7 @@ async def create_job(
         svc.cron.enable_job(job.id, False)
         job = next((j for j in svc.cron.list_jobs(include_disabled=True) if j.id == job.id), job)
 
+    _sync_heartbeat_file(svc)
     return _to_info(job)
 
 
@@ -130,6 +201,7 @@ async def update_job(
 
     svc.cron._save_store()
     svc.cron._arm_timer()
+    _sync_heartbeat_file(svc)
     return _to_info(job)
 
 
@@ -142,3 +214,4 @@ async def delete_job(
     removed = svc.cron.remove_job(job_id)
     if not removed:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Job '{job_id}' not found")
+    _sync_heartbeat_file(svc)
