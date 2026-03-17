@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass, field
 from typing import Callable
 
@@ -28,7 +27,6 @@ class ServiceContainer:
     cron: CronService
     heartbeat: HeartbeatService
     make_provider: Callable = field(default=lambda cfg: None)
-    agent_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     def reload_provider(self) -> None:
         """Hot-swap the LLM provider and all runtime settings on agent and heartbeat."""

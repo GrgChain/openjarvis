@@ -7,9 +7,19 @@ Zero modifications to any nanobot source files.
 from __future__ import annotations
 
 import asyncio
+import logging
 import sys
 from pathlib import Path
 from typing import Any
+
+# Suppress litellm's noisy "missing reasoning_content" warning for Moonshot
+# reasoning models.  litellm already injects a placeholder automatically;
+# the WARNING is purely cosmetic noise.
+logging.getLogger("LiteLLM").addFilter(
+    type("_ReasoningFilter", (), {
+        "filter": staticmethod(lambda r: "reasoning_content" not in r.getMessage())
+    })()
+)
 
 
 def _apply_patches() -> None:
@@ -51,26 +61,6 @@ def _apply_patches() -> None:
     # We detect the error on the first call and transparently switch, then cache the decision so
     # all subsequent calls for this api_base go directly to the right endpoint.
     _patch_responses_api_fallback()
-
-    # Patch 5: Ensure assistant messages with tool_calls always carry
-    # reasoning_content (Moonshot and other reasoning models require it;
-    # without it litellm injects a placeholder and logs a noisy WARNING).
-    from nanobot.utils import helpers as _helpers
-    from nanobot.agent import context as _ctx
-    from nanobot.agent import subagent as _sub
-
-    _orig_build = _helpers.build_assistant_message
-
-    def _build_with_reasoning(
-        content, tool_calls=None, reasoning_content=None, thinking_blocks=None,
-    ):
-        if tool_calls and reasoning_content is None:
-            reasoning_content = ""
-        return _orig_build(content, tool_calls, reasoning_content, thinking_blocks)
-
-    _helpers.build_assistant_message = _build_with_reasoning  # type: ignore[assignment]
-    _ctx.build_assistant_message = _build_with_reasoning  # type: ignore[attr-defined]
-    _sub.build_assistant_message = _build_with_reasoning  # type: ignore[attr-defined]
 
 
 def _patch_responses_api_fallback() -> None:
@@ -375,7 +365,6 @@ async def main(
     )
 
     # ------------------------------------------------------------------ cron
-    _agent_lock = asyncio.Lock()  # serialize process_direct calls (heartbeat / cron / web)
     _container_ref: dict[str, Any] = {}  # lazy ref, set after ServiceContainer is created
 
     async def _archive_session(session_key: str) -> None:
@@ -408,13 +397,12 @@ async def main(
             cron_token = cron_tool.set_cron_context(True)
         session_key = f"cron:{job.id}"
         try:
-            async with _agent_lock:
-                response = await agent.process_direct(
-                    reminder_note,
-                    session_key=session_key,
-                    channel=job.payload.channel or "cli",
-                    chat_id=job.payload.to or "direct",
-                )
+            response = await agent.process_direct(
+                reminder_note,
+                session_key=session_key,
+                channel=job.payload.channel or "cli",
+                chat_id=job.payload.to or "direct",
+            )
         finally:
             if isinstance(cron_tool, CronTool) and cron_token is not None:
                 cron_tool.reset_cron_context(cron_token)
@@ -467,14 +455,13 @@ async def main(
         async def _silent(*_args: object, **_kwargs: object) -> None:
             pass
 
-        async with _agent_lock:
-            response = await agent.process_direct(
-                tasks,
-                session_key="heartbeat",
-                channel=channel,
-                chat_id=chat_id,
-                on_progress=_silent,
-            )
+        response = await agent.process_direct(
+            tasks,
+            session_key="heartbeat",
+            channel=channel,
+            chat_id=chat_id,
+            on_progress=_silent,
+        )
 
         # Archive heartbeat session to HISTORY.md after execution
         asyncio.create_task(_archive_session("heartbeat"))
@@ -507,7 +494,6 @@ async def main(
         cron=cron,
         heartbeat=heartbeat,
         make_provider=_make_provider,
-        agent_lock=_agent_lock,
     )
     _container_ref["svc"] = container
 
