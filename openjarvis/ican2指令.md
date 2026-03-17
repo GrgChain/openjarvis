@@ -9,13 +9,15 @@
 
 
 
-创建雪球模拟盘做T策略任务
-1.查询今天全球市场简报作为今天基调
-2.使用做T策略扫描股票
-3.根据扫描结果，结合全球市场简报，生成做T策略报告
-4.在雪球上模拟做T操作
-### 盘中时间窗口
+创建雪球模拟盘做T策略任务 9:45 10:15 10:45 11:15 13:45 14:15
 
+【雪球做T策略】执行任务：
+1. 读取今天的全球市场简报报告（/root/.nanobot/workspace/global-market-brief/reports/global-market-brief-YYYYMMDD.md）作为今日基调
+2. 执行做T策略扫描：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/intraday-t-trading/scripts/t_trading_scanner.py --json
+3. 结合全球市场简报和扫描结果，生成做T策略报告（包含正T/倒T信号、风险提示、仓位建议），保存到/root/.nanobot/workspace/t-trading-report/t-trading-report-YYYYMMDD-hhmm.md
+4. 根据做T策略报告中的LONG/SHORT信号，在雪球模拟盘上执行相应做T操作（使用snowball-trading skill的adjust/buy/sell命令）
+5. 严格遵守做T策略报告中的时间窗口：
+### 盘中时间窗口
 | 时间段 | 操作 | 说明 |
 |-------|------|------|
 | 9:30-10:00 | 观察 | 避免开盘波动 |
@@ -24,12 +26,10 @@
 | 13:30-14:00 | 正T/倒T | 第二黄金窗口 |
 | 14:00-14:30 | 减仓 | 逐步降低仓位 |
 | 14:30后 | 禁止新开 | 只平仓 |
-
 ## 快速口诀
-
 **正T**: J值25下缩量买，下轨附近入两点卖，一点五止损纪律牢
 **倒T**: J值80上放量卖，两点买回不追高，突破两放弃现金王
 **停手**: 大盘跌超2%全停，个股跌停不碰，连错三把先冷静，尾盘半小时不新开
-5.将报告保存到工作区下的trading-log/t-trading-YYYY-MM-DD_HHMM.md
+6. 保存操作日志到 /root/.nanobot/workspace/trading-log/t-trading-YYYYMMDD-hhmm.md
 
 

@@ -56,6 +56,8 @@ def _apply_patches() -> None:
     # reasoning_content (Moonshot and other reasoning models require it;
     # without it litellm injects a placeholder and logs a noisy WARNING).
     from nanobot.utils import helpers as _helpers
+    from nanobot.agent import context as _ctx
+    from nanobot.agent import subagent as _sub
 
     _orig_build = _helpers.build_assistant_message
 
@@ -67,6 +69,8 @@ def _apply_patches() -> None:
         return _orig_build(content, tool_calls, reasoning_content, thinking_blocks)
 
     _helpers.build_assistant_message = _build_with_reasoning  # type: ignore[assignment]
+    _ctx.build_assistant_message = _build_with_reasoning  # type: ignore[attr-defined]
+    _sub.build_assistant_message = _build_with_reasoning  # type: ignore[attr-defined]
 
 
 def _patch_responses_api_fallback() -> None:
