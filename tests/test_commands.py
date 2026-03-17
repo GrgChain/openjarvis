@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from nanobot.cli.commands import app
+from nanobot.cli.commands import _make_provider, app
 from nanobot.config.schema import Config
 from nanobot.providers.litellm_provider import LiteLLMProvider
 from nanobot.providers.openai_codex_provider import _strip_model_prefix
@@ -45,7 +45,7 @@ def mock_paths():
         mock_ws.return_value = workspace_dir
         mock_sc.side_effect = lambda config: config_file.write_text("{}")
 
-        yield config_file, workspace_dir
+        yield config_file, workspace_dir, mock_ws
 
         if base_dir.exists():
             shutil.rmtree(base_dir)
@@ -53,7 +53,7 @@ def mock_paths():
 
 def test_onboard_fresh_install(mock_paths):
     """No existing config — should create from scratch."""
-    config_file, workspace_dir = mock_paths
+    config_file, workspace_dir, mock_ws = mock_paths
 
     result = runner.invoke(app, ["onboard"])
 
@@ -64,11 +64,13 @@ def test_onboard_fresh_install(mock_paths):
     assert config_file.exists()
     assert (workspace_dir / "AGENTS.md").exists()
     assert (workspace_dir / "memory" / "MEMORY.md").exists()
+    expected_workspace = Config().workspace_path
+    assert mock_ws.call_args.args == (expected_workspace,)
 
 
 def test_onboard_existing_config_refresh(mock_paths):
     """Config exists, user declines overwrite — should refresh (load-merge-save)."""
-    config_file, workspace_dir = mock_paths
+    config_file, workspace_dir, _ = mock_paths
     config_file.write_text('{"existing": true}')
 
     result = runner.invoke(app, ["onboard"], input="n\n")
@@ -82,7 +84,7 @@ def test_onboard_existing_config_refresh(mock_paths):
 
 def test_onboard_existing_config_overwrite(mock_paths):
     """Config exists, user confirms overwrite — should reset to defaults."""
-    config_file, workspace_dir = mock_paths
+    config_file, workspace_dir, _ = mock_paths
     config_file.write_text('{"existing": true}')
 
     result = runner.invoke(app, ["onboard"], input="y\n")
@@ -95,7 +97,7 @@ def test_onboard_existing_config_overwrite(mock_paths):
 
 def test_onboard_existing_workspace_safe_create(mock_paths):
     """Workspace exists — should not recreate, but still add missing templates."""
-    config_file, workspace_dir = mock_paths
+    config_file, workspace_dir, _ = mock_paths
     workspace_dir.mkdir(parents=True)
     config_file.write_text("{}")
 
@@ -197,6 +199,33 @@ def test_litellm_provider_canonicalizes_github_copilot_hyphen_prefix():
 def test_openai_codex_strip_prefix_supports_hyphen_and_underscore():
     assert _strip_model_prefix("openai-codex/gpt-5.1-codex") == "gpt-5.1-codex"
     assert _strip_model_prefix("openai_codex/gpt-5.1-codex") == "gpt-5.1-codex"
+
+
+def test_make_provider_passes_extra_headers_to_custom_provider():
+    config = Config.model_validate(
+        {
+            "agents": {"defaults": {"provider": "custom", "model": "gpt-4o-mini"}},
+            "providers": {
+                "custom": {
+                    "apiKey": "test-key",
+                    "apiBase": "https://example.com/v1",
+                    "extraHeaders": {
+                        "APP-Code": "demo-app",
+                        "x-session-affinity": "sticky-session",
+                    },
+                }
+            },
+        }
+    )
+
+    with patch("nanobot.providers.custom_provider.AsyncOpenAI") as mock_async_openai:
+        _make_provider(config)
+
+    kwargs = mock_async_openai.call_args.kwargs
+    assert kwargs["api_key"] == "test-key"
+    assert kwargs["base_url"] == "https://example.com/v1"
+    assert kwargs["default_headers"]["APP-Code"] == "demo-app"
+    assert kwargs["default_headers"]["x-session-affinity"] == "sticky-session"
 
 
 @pytest.fixture
