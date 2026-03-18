@@ -21,7 +21,16 @@ python3 scripts/score_sectors.py
 | `--top N` | Top N sectors (0 = no limit) | `20` |
 | `--min-score N` | Minimum score filter | `60` |
 | `--all` | Show all sectors (alias `--min-score 0`) | off |
-| `--output` | Output file path | `sector/sector_strength_<YYYYMMDD>.json` |
+| `--output` | Output file path | `sector_strength_<YYYY-MM-DD>.json` |
+| `--source` | Data source: `auto`, `tushare`, `akshare` | `auto` |
+
+## Data Source
+
+Priority: **tushare** → akshare fallback (when `--source auto`).
+
+- `tushare`: requires `TUSHARE_TOKEN` env var. Uses SW L2 industry index + moneyflow.
+- `akshare`: uses 东方财富行业板块 + 资金流向, no token needed.
+- `auto` (default): try tushare first, fall back to akshare if unavailable or fails.
 
 ## Scoring Logic
 

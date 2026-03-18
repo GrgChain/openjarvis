@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Score strong sectors with deterministic rules.
 
+Data source priority: tushare (via TUSHARE_TOKEN) → akshare fallback.
 Tunable constants are defined at the top of this file for easy adjustment.
 """
 from __future__ import annotations
@@ -8,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -54,6 +56,35 @@ RISK_RULES: list[tuple[str, Any]] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Helper utilities
+# ---------------------------------------------------------------------------
+
+def _to_float(v: Any) -> float:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _to_int(v: Any) -> int:
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _clamp(v: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, v))
+
+
+def _scale_linear(v: float, lo: float, hi: float) -> float:
+    """Normalize *v* from [lo, hi] to [0, 100], clamped."""
+    if hi <= lo:
+        return 50.0
+    return _clamp((v - lo) / (hi - lo) * 100.0, 0.0, 100.0)
+
+
 def _rank_percentiles(values: list[float]) -> dict[float, float]:
     if not values:
         return {}
@@ -67,12 +98,75 @@ def _rank_percentiles(values: list[float]) -> dict[float, float]:
     return result
 
 
+# ---------------------------------------------------------------------------
+# Data sources
+# ---------------------------------------------------------------------------
+
+def _fetch_tushare() -> list[dict[str, Any]]:
+    """Fetch sector data via tushare sw_daily (申万行业日行情). Returns [] on failure."""
+    token = os.environ.get("TUSHARE_TOKEN")
+    if not token:
+        return []
+    try:
+        import tushare as ts  # type: ignore
+    except ImportError:
+        return []
+
+    try:
+        ts.set_token(token)
+        pro = ts.pro_api()
+
+        today = datetime.now().strftime("%Y%m%d")
+
+        # sw_daily: 申万行业日行情（包含 name, pct_change, vol, amount 等）
+        df = pro.sw_daily(trade_date=today)
+        if df is None or df.empty:
+            # 非交易日 fallback 到最近交易日
+            from datetime import timedelta
+            for offset in range(1, 5):
+                d = (datetime.now() - timedelta(days=offset)).strftime("%Y%m%d")
+                df = pro.sw_daily(trade_date=d)
+                if df is not None and not df.empty:
+                    break
+        if df is None or df.empty:
+            return []
+
+        # 只保留 L2 行业指数
+        l2 = pro.index_classify(level="L2", src="SW2021")
+        if l2 is not None and not l2.empty:
+            l2_codes = set(l2["index_code"].tolist())
+            df = df[df["ts_code"].isin(l2_codes)]
+
+        rows: list[dict[str, Any]] = []
+        for _, r in df.iterrows():
+            name = str(r.get("name", "")).strip()
+            if not name:
+                continue
+            rows.append({
+                "name": name,
+                "change_pct": _to_float(r.get("pct_change")),
+                "turnover": 0.0,  # sw_daily 无换手率
+                "up_count": 0,
+                "down_count": 0,
+                "top_stock_change": 0.0,
+                "main_net_inflow": 0.0,
+                "main_net_inflow_pct": 0.0,
+            })
+
+        if rows:
+            print(f"[tushare] Loaded {len(rows)} sectors", file=sys.stderr)
+        return rows
+
+    except Exception as exc:
+        print(f"[tushare] Failed: {exc}", file=sys.stderr)
+        return []
+
 
 def _fetch_akshare() -> list[dict[str, Any]]:
     try:
         import akshare as ak  # type: ignore
     except ImportError as exc:
-        raise RuntimeError("akshare is required for --source-akshare") from exc
+        raise RuntimeError("akshare is required as fallback data source") from exc
 
     industry_df = ak.stock_board_industry_name_em()
     if industry_df is None or industry_df.empty:
@@ -107,8 +201,14 @@ def _fetch_akshare() -> list[dict[str, Any]]:
     except Exception:
         pass
 
+    if rows:
+        print(f"[akshare] Loaded {len(rows)} sectors", file=sys.stderr)
     return list(rows.values())
 
+
+# ---------------------------------------------------------------------------
+# Scoring
+# ---------------------------------------------------------------------------
 
 def _classify_tier(score: float) -> str:
     """Map score to tier label."""
@@ -199,7 +299,9 @@ def _score_row(row: dict[str, Any], inflow_pct_rank: dict[float, float]) -> dict
     }
 
 
-
+# ---------------------------------------------------------------------------
+# Output / CLI
+# ---------------------------------------------------------------------------
 
 def _write_output(text: str, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -209,8 +311,8 @@ def _write_output(text: str, output: Path) -> None:
 
 def _resolve_output_path(output_arg: str | None) -> Path:
     """Resolve output path. Default: sector_strength_<YYYY-MM-DD>.json in cwd."""
-    ts = datetime.now().strftime("%Y-%m-%d")
-    default_name = f"sector_strength_{ts}.json"
+    stamp = datetime.now().strftime("%Y-%m-%d")
+    default_name = f"sector_strength_{stamp}.json"
     if output_arg is None:
         return Path(default_name)
     p = Path(output_arg).expanduser()
@@ -220,11 +322,13 @@ def _resolve_output_path(output_arg: str | None) -> Path:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Score strong sectors with deterministic rules via akshare.")
+    parser = argparse.ArgumentParser(description="Score strong sectors (tushare优先, akshare fallback).")
     parser.add_argument("--top", type=int, default=20, help="Top N sectors to keep after sorting (0 = no limit).")
     parser.add_argument("--min-score", type=float, default=60.0, help="Minimum score filter.")
     parser.add_argument("--all", action="store_true", help="Show all sectors (alias for --min-score 0).")
-    parser.add_argument("--output", default=None, help="Output file path (default: sector/sector_strength_<YYYY-MM-DD>.json).")
+    parser.add_argument("--output", default=None, help="Output file path.")
+    parser.add_argument("--source", choices=["auto", "tushare", "akshare"], default="auto",
+                        help="Data source: auto (tushare→akshare), tushare, akshare.")
     return parser.parse_args()
 
 
@@ -232,8 +336,19 @@ def main() -> int:
     args = parse_args()
     min_score = 0.0 if getattr(args, "all", False) else args.min_score
 
-    # --- Load data ---
-    source_rows = _fetch_akshare()
+    # --- Load data (tushare优先, akshare fallback) ---
+    source_rows: list[dict[str, Any]] = []
+    source_used = ""
+
+    if args.source in ("auto", "tushare"):
+        source_rows = _fetch_tushare()
+        if source_rows:
+            source_used = "tushare"
+
+    if not source_rows and args.source in ("auto", "akshare"):
+        source_rows = _fetch_akshare()
+        if source_rows:
+            source_used = "akshare"
 
     if not source_rows:
         print("No sector rows loaded.", file=sys.stderr)
@@ -253,6 +368,7 @@ def main() -> int:
     output_path = _resolve_output_path(args.output)
 
     payload = {
+        "source": source_used,
         "count": len(scored),
         "strong_sectors": scored,
         "threshold": min_score,
