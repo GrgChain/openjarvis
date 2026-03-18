@@ -12,7 +12,7 @@
 创建雪球模拟盘做T策略定时任务 9:45 10:15 10:45 11:15 13:45 14:15
 
 【雪球做T策略】执行任务：
-1. 读取今天的全球市场简报报告（/root/.nanobot/workspace/global-market-brief/reports/global-market-brief-YYYYMMDD.md）作为今日基调
+1. 读取今天的全球市场简报报告（/root/.nanobot/workspace/reports/global-market-brief-YYYYMMDD.md）作为今日基调
 2. 执行做T策略扫描：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/intraday-t-trading/scripts/t_trading_scanner.py --json
 3. 结合全球市场简报和扫描结果，生成做T策略报告（包含正T/倒T信号、风险提示、仓位建议），保存到/root/.nanobot/workspace/t_trading_report/t_trading_report-YYYYMMDD-hhmm.md
 4. 根据做T策略报告中的LONG/SHORT信号，在雪球模拟盘上执行相应做T操作（使用snowball-trading skill的adjust/buy/sell命令）
