@@ -407,8 +407,9 @@ async def main(
             if isinstance(cron_tool, CronTool) and cron_token is not None:
                 cron_tool.reset_cron_context(cron_token)
 
-        # Archive cron session to HISTORY.md after execution
-        asyncio.create_task(_archive_session(session_key))
+        # Cron sessions keep their messages (like Feishu channel sessions).
+        # Archiving is handled by the agent loop's memory consolidator
+        # (maybe_consolidate_by_tokens) when the session grows too long.
 
         # Update HEARTBEAT.md with latest cron job status
         try:
@@ -463,8 +464,8 @@ async def main(
             on_progress=_silent,
         )
 
-        # Archive heartbeat session to HISTORY.md after execution
-        asyncio.create_task(_archive_session("heartbeat"))
+        # Heartbeat sessions keep their messages (like Feishu channel sessions).
+        # Archiving is handled by the agent loop's memory consolidator.
 
         return response
 
