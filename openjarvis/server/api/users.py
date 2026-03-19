@@ -10,14 +10,13 @@ from typing import Any
 
 from server.api.auth import hash_password
 
-_USERS_PATH = Path.home() / ".nanobot" / "server_users.json"
-
+from nanobot.config.paths import get_data_dir
 
 class UserStore:
     """Thread-safe (asyncio single-thread) persistent user store."""
 
     def __init__(self, path: Path | None = None):
-        self._path = path or _USERS_PATH
+        self._path = path or (get_data_dir() / "server_users.json")
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._ensure_default_admin()
 

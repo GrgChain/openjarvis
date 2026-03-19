@@ -25,7 +25,12 @@ def create_app(container: ServiceContainer | None = None) -> FastAPI:
 
     # Attach shared state
     app.state.services = container
+    
+    # Configure storage paths
+    from nanobot.config.paths import get_data_dir
     app.state.user_store = UserStore()
+    app.state.uploads_dir = get_data_dir() / "uploads"
+    app.state.uploads_dir.mkdir(parents=True, exist_ok=True)
 
     # Middleware
     setup_cors(app)

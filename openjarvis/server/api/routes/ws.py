@@ -16,19 +16,16 @@ from nanobot.channels.base import BaseChannel
 
 router = APIRouter()
 
-# Uploaded files live here — same path as routes/files.py
-_UPLOADS_DIR = Path.home() / ".nanobot" / "uploads"
-
 # Match markdown image links pointing to /api/files/...
 _IMAGE_MD_RE = re.compile(r"!\[[^\]]*\]\(/api/files/([^)]+\.(?:png|jpe?g|gif|webp|bmp))\)", re.IGNORECASE)
 
 
-def _extract_media_paths(content: str) -> list[str]:
+def _extract_media_paths(content: str, uploads_dir: Path) -> list[str]:
     """Extract local file paths for images referenced as ![...](/api/files/xxx)."""
     paths: list[str] = []
     for m in _IMAGE_MD_RE.finditer(content):
         filename = m.group(1)
-        fp = _UPLOADS_DIR / filename
+        fp = uploads_dir / filename
         if fp.is_file():
             paths.append(str(fp))
     return paths
@@ -37,16 +34,13 @@ def _extract_media_paths(content: str) -> list[str]:
 class WebChannel(BaseChannel):
     """
     A nanobot Channel implementation for the Web interface.
-    
-    Instead of patching tools, this channel integrates with the standard
-    message bus. It allows multiple WebSocket connections (for the same user)
-    to receive the same messages (fan-out).
     """
     name = "web"
     display_name = "Web"
 
-    def __init__(self, config: Any, bus: Any):
+    def __init__(self, config: Any, bus: Any, uploads_dir: Path):
         super().__init__(config, bus)
+        self.uploads_dir = uploads_dir
         # chat_id (user_id) -> list[asyncio.Queue[dict]]
         self.queues: dict[str, list[asyncio.Queue]] = {}
         self._running = False
@@ -70,7 +64,6 @@ class WebChannel(BaseChannel):
             for m_path in msg.media:
                 fname = Path(m_path).name
                 if f"/api/files/{fname}" not in content:
-                    # Avoid duplication if already in content
                     content += f"\n\n![image](/api/files/{fname})"
 
         payload = {
@@ -80,7 +73,6 @@ class WebChannel(BaseChannel):
         if msg.metadata.get("_tool_hint"):
             payload["tool_hint"] = True
 
-        # Fan-out to all active queues for this chat_id
         for q in queues:
             try:
                 await q.put(payload)
@@ -99,10 +91,9 @@ class WebChannel(BaseChannel):
                 self.queues.pop(cid)
 
 
-def _ensure_web_channel(container: Any) -> WebChannel:
+def _ensure_web_channel(container: Any, uploads_dir: Path) -> WebChannel:
     """Ensure the 'web' channel is registered in the ChannelManager."""
     if "web" not in container.channels.channels:
-        # Pass a minimal config object
         from dataclasses import dataclass
         @dataclass
         class SimpleConfig:
@@ -110,7 +101,7 @@ def _ensure_web_channel(container: Any) -> WebChannel:
             allow_from: list[str] = None
         
         cfg = SimpleConfig(allow_from=["*"])
-        channel = WebChannel(cfg, container.bus)
+        channel = WebChannel(cfg, container.bus, uploads_dir)
         container.channels.channels["web"] = channel
         logger.info("WebChannel registered dynamically")
     return container.channels.channels["web"]
@@ -173,8 +164,11 @@ async def ws_chat(websocket: WebSocket) -> None:
         await websocket.close()
         return
 
+    # Use dynamic uploads_dir from app state
+    uploads_dir = websocket.app.state.uploads_dir
+
     # Initialize dynamic WebChannel if needed
-    web_channel = _ensure_web_channel(container)
+    web_channel = _ensure_web_channel(container, uploads_dir)
     
     # Per-connection queue for receiving OutboundMessages from the WebChannel
     conn_q: asyncio.Queue[dict] = asyncio.Queue()
@@ -235,7 +229,7 @@ async def ws_chat(websocket: WebSocket) -> None:
                     continue
 
                 # Prepare the InboundMessage
-                media_paths = _extract_media_paths(content)
+                media_paths = _extract_media_paths(content, uploads_dir)
                 inbound = InboundMessage(
                     channel="web",
                     sender_id=str(user["id"]),
