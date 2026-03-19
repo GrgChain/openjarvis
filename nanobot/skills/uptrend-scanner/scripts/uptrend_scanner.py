@@ -355,8 +355,14 @@ def main():
         print("未能加载任何行情数据", file=sys.stderr)
         sys.exit(1)
 
-    # 加载股票名称映射
+    # 加载股票名称映射，排除 ST 股票
     stock_info = load_stocklist()
+    st_codes = {code for code, info in stock_info.items() if "ST" in info.get("name", "").upper()}
+    data = {code: df for code, df in data.items() if code not in st_codes}
+    if not data:
+        print("排除 ST 后无可用数据", file=sys.stderr)
+        sys.exit(1)
+    print(f"排除 {len(st_codes)} 只 ST 股票，剩余 {len(data)} 只", file=sys.stderr)
 
     # 扫描
     results = []
