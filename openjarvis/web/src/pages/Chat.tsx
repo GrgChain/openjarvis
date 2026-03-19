@@ -49,19 +49,51 @@ export default function Chat() {
     // Filter out empty messages only (assistant stubs with null/empty content).
     // tool and system messages are included but rendered differently.
     const msgs = (sessionMsgs ?? [])
-      .filter((m) =>
-        typeof m.content === "string" &&
-        m.content.trim().length > 0 &&
-        // Hide redundant "Message sent to ..." tool result — reply is shown as assistant bubble
-        !(m.role === "tool" && m.name === "message")
-      )
-      .map((m) => ({
-        id: nanoid(),
-        role: m.role as "user" | "assistant" | "tool" | "system",
-        content: m.content as string,
-        timestamp: m.timestamp ?? new Date().toISOString(),
-        name: m.name ?? undefined,
-      }));
+      .filter((m) => {
+        if (m.role === "tool" && m.name === "message") return false;
+        if (m.content == null) return false;
+        if (typeof m.content === "string") return m.content.trim().length > 0;
+        if (Array.isArray(m.content)) return m.content.length > 0;
+        return false;
+      })
+      .map((m) => {
+        let content: string;
+        if (Array.isArray(m.content)) {
+          // Multimodal content: extract text parts, convert [image: path] to markdown
+          const parts = (m.content as { type: string; text?: string }[])
+            .filter((c) => c.type === "text" && c.text)
+            .map((c) => c.text ?? "");
+          
+          const textJoined = parts.join("\n");
+          // Extract all filenames already in markdown links ![...](/api/files/FILENAME)
+          const existingFiles = new Set([...textJoined.matchAll(/\/api\/files\/([^)]+)/g)].map(m => m[1]));
+          
+          const finalParts = parts.map((p) => {
+            // Check if this part is a placeholder [image: .../FILENAME]
+            const placeholderMatch = p.match(/\[image: .*?\.nanobot\/uploads\/([^\]]+)\]/);
+            if (placeholderMatch) {
+              const filename = placeholderMatch[1];
+              if (existingFiles.has(filename)) {
+                return ""; // Skip, already mentioned in text
+              }
+              existingFiles.add(filename); // Mark as seen
+              return p.replace(/\[image: .*?\.nanobot\/uploads\/([^\]]+)\]/g, "![image](/api/files/$1)");
+            }
+            return p;
+          }).filter(p => p !== "");
+          
+          content = finalParts.join("\n");
+        } else {
+          content = (m.content as string) || "";
+        }
+        return {
+          id: nanoid(),
+          role: m.role as "user" | "assistant" | "tool" | "system",
+          content,
+          timestamp: m.timestamp ?? new Date().toISOString(),
+          name: m.name ?? undefined,
+        };
+      });
     // Only overwrite if we got actual history (avoids wiping persisted messages on new empty sessions)
     if (msgs.length > 0) {
       // Preserve locally-added messages not present in server data.

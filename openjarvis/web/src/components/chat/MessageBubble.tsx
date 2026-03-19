@@ -158,7 +158,33 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       )}>
         {isUser ? (
           <div className="rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground shadow-sm">
-            <span className="whitespace-pre-wrap">{message.content}</span>
+            {(() => {
+              const imgRe = /!\[([^\]]*)\]\(([^)]+)\)/g;
+              const images: { alt: string; src: string }[] = [];
+              let m;
+              while ((m = imgRe.exec(message.content)) !== null) {
+                images.push({ alt: m[1], src: m[2] });
+              }
+              const text = message.content.replace(/!\[[^\]]*\]\([^)]+\)\n?/g, "").trim();
+              return (
+                <>
+                  {text && <span className="whitespace-pre-wrap">{text}</span>}
+                  {images.length > 0 && (
+                    <div className={cn("flex flex-wrap gap-2", text && "mt-2")}>
+                      {images.map((img, i) => (
+                        <a key={i} href={img.src} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={img.src}
+                            alt={img.alt}
+                            className="max-h-48 max-w-[240px] rounded-lg border border-primary-foreground/20 object-cover"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         ) : (
           <div className="w-full space-y-2">

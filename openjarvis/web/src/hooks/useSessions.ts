@@ -10,7 +10,7 @@ export interface SessionInfo {
 
 export interface MessageInfo {
   role: string;
-  content: string | null;
+  content: string | any[] | null;
   timestamp?: string;
   tool_calls?: unknown[];
   tool_call_id?: string;

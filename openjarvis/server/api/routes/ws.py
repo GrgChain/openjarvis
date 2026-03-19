@@ -3,61 +3,117 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import uuid
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from loguru import logger
 
+from nanobot.bus.events import InboundMessage, OutboundMessage
+from nanobot.channels.base import BaseChannel
+
 router = APIRouter()
 
-# ---------------------------------------------------------------------------
-# Web-channel message capture
-#
-# When the agent replies via the message() tool instead of returning text
-# directly, process_direct() returns "".  The tool calls bus.publish_outbound
-# which the channel dispatcher drops (no "web" channel handler exists).
-#
-# Fix: patch the MessageTool's send_callback once so that messages addressed
-# to channel="web" are pushed into per-connection capture queues, letting each
-# _run_agent coroutine collect them after process_direct returns.
-# ---------------------------------------------------------------------------
+# Uploaded files live here — same path as routes/files.py
+_UPLOADS_DIR = Path.home() / ".nanobot" / "uploads"
 
-# user_id → list[asyncio.Queue[str]]: one queue per active WebSocket connection
-_web_captures: dict[str, list[asyncio.Queue]] = {}
-_message_tool_patched = False
+# Match markdown image links pointing to /api/files/...
+_IMAGE_MD_RE = re.compile(r"!\[[^\]]*\]\(/api/files/([^)]+\.(?:png|jpe?g|gif|webp|bmp))\)", re.IGNORECASE)
 
 
-def _ensure_message_tool_patched(container: Any) -> None:
-    """One-time patch of the AgentLoop's MessageTool send_callback."""
-    global _message_tool_patched
-    if _message_tool_patched:
-        return
-    try:
-        from nanobot.agent.tools.message import MessageTool
-        msg_tool = container.agent.tools.get("message")
-        if not isinstance(msg_tool, MessageTool):
+def _extract_media_paths(content: str) -> list[str]:
+    """Extract local file paths for images referenced as ![...](/api/files/xxx)."""
+    paths: list[str] = []
+    for m in _IMAGE_MD_RE.finditer(content):
+        filename = m.group(1)
+        fp = _UPLOADS_DIR / filename
+        if fp.is_file():
+            paths.append(str(fp))
+    return paths
+
+
+class WebChannel(BaseChannel):
+    """
+    A nanobot Channel implementation for the Web interface.
+    
+    Instead of patching tools, this channel integrates with the standard
+    message bus. It allows multiple WebSocket connections (for the same user)
+    to receive the same messages (fan-out).
+    """
+    name = "web"
+    display_name = "Web"
+
+    def __init__(self, config: Any, bus: Any):
+        super().__init__(config, bus)
+        # chat_id (user_id) -> list[asyncio.Queue[dict]]
+        self.queues: dict[str, list[asyncio.Queue]] = {}
+        self._running = False
+
+    async def start(self) -> None:
+        self._running = True
+
+    async def stop(self) -> None:
+        self._running = False
+
+    async def send(self, msg: OutboundMessage) -> None:
+        """Receive an OutboundMessage from the bus and route to WebSockets."""
+        queues = self.queues.get(str(msg.chat_id), [])
+        if not queues:
             return
-        original_callback = msg_tool._send_callback
 
-        async def _patched_send(outbound_msg: Any) -> None:
-            # Non-progress web messages → route to capture queues, skip the bus
-            if (
-                outbound_msg.channel == "web"
-                and not (outbound_msg.metadata or {}).get("_progress")
-            ):
-                queues = _web_captures.get(str(outbound_msg.chat_id), [])
-                for q in queues:
-                    await q.put(outbound_msg.content or "")
-                return  # consumed by WebSocket — don't push to shared bus
-            if original_callback:
-                await original_callback(outbound_msg)
+        # Prepare the payload once
+        content = msg.content or ""
+        # Append media as markdown images so the web UI can render them
+        if msg.media:
+            for m_path in msg.media:
+                fname = Path(m_path).name
+                if f"/api/files/{fname}" not in content:
+                    # Avoid duplication if already in content
+                    content += f"\n\n![image](/api/files/{fname})"
 
-        msg_tool.set_send_callback(_patched_send)
-        _message_tool_patched = True
-        logger.debug("MessageTool patched for web-channel capture")
-    except Exception as exc:
-        logger.warning("Could not patch MessageTool: {}", exc)
+        payload = {
+            "type": "progress" if msg.metadata.get("_progress") else "done",
+            "content": content,
+        }
+        if msg.metadata.get("_tool_hint"):
+            payload["tool_hint"] = True
+
+        # Fan-out to all active queues for this chat_id
+        for q in queues:
+            try:
+                await q.put(payload)
+            except Exception:
+                pass
+
+    def register_queue(self, chat_id: str, q: asyncio.Queue) -> None:
+        self.queues.setdefault(str(chat_id), []).append(q)
+
+    def unregister_queue(self, chat_id: str, q: asyncio.Queue) -> None:
+        cid = str(chat_id)
+        if cid in self.queues:
+            if q in self.queues[cid]:
+                self.queues[cid].remove(q)
+            if not self.queues[cid]:
+                self.queues.pop(cid)
+
+
+def _ensure_web_channel(container: Any) -> WebChannel:
+    """Ensure the 'web' channel is registered in the ChannelManager."""
+    if "web" not in container.channels.channels:
+        # Pass a minimal config object
+        from dataclasses import dataclass
+        @dataclass
+        class SimpleConfig:
+            enabled: bool = True
+            allow_from: list[str] = None
+        
+        cfg = SimpleConfig(allow_from=["*"])
+        channel = WebChannel(cfg, container.bus)
+        container.channels.channels["web"] = channel
+        logger.info("WebChannel registered dynamically")
+    return container.channels.channels["web"]
 
 
 async def _auth_websocket(websocket: WebSocket) -> dict | None:
@@ -106,21 +162,6 @@ async def _archive_session(container: Any, session_key: str) -> bool:
 async def ws_chat(websocket: WebSocket) -> None:
     """
     WebSocket chat endpoint.
-
-    Query params:
-      token=<jwt>              — required for authentication
-      session=<session_key>    — optional; if omitted a new ``web:<uid>:<uuid>`` key is created
-
-    Client → Server frames (JSON):
-      {"type": "message", "content": "...", "session_key": "..."}
-      {"type": "cancel"}
-      {"type": "new_session"}
-
-    Server → Client frames (JSON):
-      {"type": "session_info", "session_key": "web:..."}
-      {"type": "progress",     "content": "...", "tool_hint": bool}
-      {"type": "done",         "content": "..."}
-      {"type": "error",        "content": "..."}
     """
     user = await _auth_websocket(websocket)
     if user is None:
@@ -128,29 +169,37 @@ async def ws_chat(websocket: WebSocket) -> None:
 
     await websocket.accept()
     container = websocket.app.state.services
-
     if container is None:
-        await websocket.send_json({"type": "error", "content": "Services not initialised"})
         await websocket.close()
         return
 
-    # Patch MessageTool once so web-channel replies are captured (not dropped)
-    _ensure_message_tool_patched(container)
+    # Initialize dynamic WebChannel if needed
+    web_channel = _ensure_web_channel(container)
+    
+    # Per-connection queue for receiving OutboundMessages from the WebChannel
+    conn_q: asyncio.Queue[dict] = asyncio.Queue()
+    uid = str(user["id"])
+    web_channel.register_queue(uid, conn_q)
 
-    # Read progress config flags
-    channels_cfg = container.config.channels
-
-    # Determine or create session key
+    # Determine session key
     requested_key: str | None = websocket.query_params.get("session")
     session_key = (
         requested_key
         if requested_key and requested_key.startswith(f"web:{user['id']}")
         else f"web:{user['id']}:{uuid.uuid4().hex[:8]}"
     )
-
     await websocket.send_json({"type": "session_info", "session_key": session_key})
 
-    current_task: asyncio.Task | None = None
+    # Background task: forward messages from conn_q to the WebSocket
+    async def _send_loop():
+        try:
+            while True:
+                payload = await conn_q.get()
+                await websocket.send_json(payload)
+        except Exception:
+            pass
+
+    send_task = asyncio.create_task(_send_loop())
 
     try:
         while True:
@@ -158,101 +207,50 @@ async def ws_chat(websocket: WebSocket) -> None:
             msg_type = raw.get("type")
 
             if msg_type == "cancel":
-                if current_task and not current_task.done():
-                    current_task.cancel()
-                    await websocket.send_json({"type": "error", "content": "cancelled"})
+                # Use standard agent capability to stop tasks for this session
+                stop_msg = InboundMessage(
+                    channel="web",
+                    sender_id=str(user["id"]),
+                    chat_id=str(user["id"]),
+                    content="/stop",
+                    session_key_override=session_key
+                )
+                await container.bus.publish_inbound(stop_msg)
 
             elif msg_type == "new_session":
-                # Archive memory from old session before switching (like CLI /new)
                 old_key = session_key
                 session_key = f"web:{user['id']}:{uuid.uuid4().hex[:8]}"
                 await websocket.send_json({"type": "session_info", "session_key": session_key})
-                # Archive in background — don't block the new session
                 asyncio.create_task(_archive_session(container, old_key))
 
             elif msg_type == "message":
-                content = raw.get("content", "")
-                # Allow per-message session override so the client can switch sessions
-                # without reconnecting the WebSocket (used by the "new chat" button).
+                content = raw.get("content", "").strip()
                 msg_session_key = raw.get("session_key")
                 if msg_session_key and msg_session_key.startswith(f"web:{user['id']}"):
                     if msg_session_key != session_key:
                         session_key = msg_session_key
                         await websocket.send_json({"type": "session_info", "session_key": session_key})
+                
                 if not content:
                     continue
 
-                if current_task and not current_task.done():
-                    await websocket.send_json({
-                        "type": "error",
-                        "content": "Previous message still processing",
-                    })
-                    continue
-
-                async def _on_progress(text: str, *, tool_hint: bool = False) -> None:
-                    try:
-                        # Respect send_progress / send_tool_hints config (like CLI)
-                        if tool_hint and not getattr(channels_cfg, "send_tool_hints", False):
-                            return
-                        if not tool_hint and not getattr(channels_cfg, "send_progress", True):
-                            return
-                        await websocket.send_json({
-                            "type": "progress",
-                            "content": text,
-                            "tool_hint": tool_hint,
-                        })
-                    except Exception:
-                        pass
-
-                async def _run_agent(msg: str, sess: str) -> None:
-                    # Register a capture queue for this connection so that
-                    # message() tool replies addressed to channel="web" are
-                    # delivered here instead of being discarded by the dispatcher.
-                    capture_q: asyncio.Queue[str] = asyncio.Queue()
-                    uid = str(user["id"])
-                    _web_captures.setdefault(uid, []).append(capture_q)
-                    try:
-                        response = await container.agent.process_direct(
-                            msg,
-                            session_key=sess,
-                            channel="web",
-                            chat_id=user["id"],
-                            on_progress=_on_progress,
-                        )
-                        # If the agent replied via message() tool, process_direct
-                        # returns "".  Drain whatever the patched callback captured.
-                        if not response:
-                            collected: list[str] = []
-                            while not capture_q.empty():
-                                try:
-                                    collected.append(capture_q.get_nowait())
-                                except asyncio.QueueEmpty:
-                                    break
-                            response = "\n\n".join(c for c in collected if c)
-                        await websocket.send_json({"type": "done", "content": response})
-                    except asyncio.CancelledError:
-                        pass
-                    except Exception as exc:
-                        logger.error("WebSocket agent error: {}", exc)
-                        try:
-                            await websocket.send_json({"type": "error", "content": str(exc)})
-                        except Exception:
-                            pass
-                    finally:
-                        lst = _web_captures.get(uid, [])
-                        if capture_q in lst:
-                            lst.remove(capture_q)
-                        if not lst:
-                            _web_captures.pop(uid, None)
-
-                current_task = asyncio.create_task(_run_agent(content, session_key))
+                # Prepare the InboundMessage
+                media_paths = _extract_media_paths(content)
+                inbound = InboundMessage(
+                    channel="web",
+                    sender_id=str(user["id"]),
+                    chat_id=str(user["id"]),
+                    content=content,
+                    media=media_paths,
+                    session_key_override=session_key,
+                )
+                # Publish to the bus — standard AgentLoop.run() will pick it up
+                await container.bus.publish_inbound(inbound)
 
     except WebSocketDisconnect:
-        if current_task and not current_task.done():
-            current_task.cancel()
+        pass
     except Exception as exc:
-        logger.error("WebSocket error: {}", exc)
-        try:
-            await websocket.send_json({"type": "error", "content": str(exc)})
-        except Exception:
-            pass
+        logger.error("ws_chat error: {}", exc)
+    finally:
+        send_task.cancel()
+        web_channel.unregister_queue(uid, conn_q)
