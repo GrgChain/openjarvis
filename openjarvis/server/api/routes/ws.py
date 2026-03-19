@@ -16,14 +16,14 @@ from nanobot.channels.base import BaseChannel
 
 router = APIRouter()
 
-# Match markdown image links pointing to /api/files/...
-_IMAGE_MD_RE = re.compile(r"!\[[^\]]*\]\(/api/files/([^)]+\.(?:png|jpe?g|gif|webp|bmp))\)", re.IGNORECASE)
+# Match both images ![...](/api/files/...) and links [...](/api/files/...)
+_MEDIA_MD_RE = re.compile(r"!?\[[^\]]*\]\(/api/files/([^)]+)\)", re.IGNORECASE)
 
 
 def _extract_media_paths(content: str, uploads_dir: Path) -> list[str]:
-    """Extract local file paths for images referenced as ![...](/api/files/xxx)."""
+    """Extract local file paths for any files referenced via /api/files/."""
     paths: list[str] = []
-    for m in _IMAGE_MD_RE.finditer(content):
+    for m in _MEDIA_MD_RE.finditer(content):
         filename = m.group(1)
         fp = uploads_dir / filename
         if fp.is_file():
@@ -59,12 +59,16 @@ class WebChannel(BaseChannel):
 
         # Prepare the payload once
         content = msg.content or ""
-        # Append media as markdown images so the web UI can render them
+        # Append media as markdown images/links so the web UI can render them
         if msg.media:
             for m_path in msg.media:
                 fname = Path(m_path).name
                 if f"/api/files/{fname}" not in content:
-                    content += f"\n\n![image](/api/files/{fname})"
+                    ext = Path(m_path).suffix.lower()
+                    if ext in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}:
+                        content += f"\n\n![image](/api/files/{fname})"
+                    else:
+                        content += f"\n\n[{fname}](/api/files/{fname})"
 
         payload = {
             "type": "progress" if msg.metadata.get("_progress") else "done",

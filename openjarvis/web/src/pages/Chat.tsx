@@ -69,17 +69,15 @@ export default function Chat() {
           const existingFiles = new Set([...textJoined.matchAll(/\/api\/files\/([^)]+)/g)].map(m => m[1]));
           
           const finalParts = parts.map((p) => {
-            // Check if this part is a placeholder [image: .../FILENAME]
-            const placeholderMatch = p.match(/\[image: .*?\.nanobot\/uploads\/([^\]]+)\]/);
-            if (placeholderMatch) {
-              const filename = placeholderMatch[1];
-              if (existingFiles.has(filename)) {
-                return ""; // Skip, already mentioned in text
-              }
-              existingFiles.add(filename); // Mark as seen
-              return p.replace(/\[image: .*?\.nanobot\/uploads\/([^\]]+)\]/g, "![image](/api/files/$1)");
-            }
-            return p;
+            // Check if this part is a placeholder [image: .../FILENAME] or [file: ...]
+            const re = /\[(?:image|file|document): .*?\.nanobot\/uploads\/([^\]]+)\]/g;
+            return p.replace(re, (_match, filename) => {
+              if (existingFiles.has(filename)) return "";
+              existingFiles.add(filename);
+              const ext = filename.split('.').pop()?.toLowerCase();
+              const isImg = ext && ["png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(ext);
+              return isImg ? `![image](/api/files/${filename})` : `[${filename}](/api/files/${filename})`;
+            });
           }).filter(p => p !== "");
           
           content = finalParts.join("\n");
