@@ -1,0 +1,28 @@
+{
+  "ma_periods": {
+    "short": 5,
+    "mid": 10,
+    "long": 20,
+    "extra_long": 60
+  },
+  "weights": {
+    "ma_alignment": 0.25,
+    "price_above_ma": 0.20,
+    "ma_slope": 0.20,
+    "macd_trend": 0.20,
+    "volume_price": 0.15
+  },
+  "slope_lookback_days": 10,
+  "macd_params": {
+    "fast": 12,
+    "slow": 26,
+    "signal": 9
+  },
+  "volume_lookback_days": 10,
+  "min_data_days": 120,
+  "tiers": {
+    "strong": 80,
+    "uptrend": 60,
+    "neutral": 40
+  }
+}
