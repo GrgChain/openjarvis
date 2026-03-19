@@ -273,6 +273,26 @@ def scan_stock(code: str, df: pd.DataFrame, cfg: Dict[str, Any]) -> Optional[Dic
 # Data Loading
 # ---------------------------------------------------------------------------
 
+def load_stocklist() -> Dict[str, Dict[str, str]]:
+    """加载 stocklist.csv，返回 {symbol: {name, industry}} 映射"""
+    mapping: Dict[str, Dict[str, str]] = {}
+    stocklist_path = Path(__file__).resolve().parent / "stocklist.csv"
+    if not stocklist_path.exists():
+        return mapping
+    try:
+        df = pd.read_csv(stocklist_path, dtype=str)
+        for _, row in df.iterrows():
+            symbol = str(row.get("symbol", "")).strip()
+            if symbol:
+                mapping[symbol] = {
+                    "name": str(row.get("name", "")).strip(),
+                    "industry": str(row.get("industry", "")).strip(),
+                }
+    except Exception as e:
+        print(f"加载 stocklist.csv 出错: {e}", file=sys.stderr)
+    return mapping
+
+
 def get_data_directory(arg_data_dir: str) -> Path:
     data_dir = Path(arg_data_dir)
     if data_dir.exists():
@@ -335,11 +355,17 @@ def main():
         print("未能加载任何行情数据", file=sys.stderr)
         sys.exit(1)
 
+    # 加载股票名称映射
+    stock_info = load_stocklist()
+
     # 扫描
     results = []
     for code, df in data.items():
         result = scan_stock(code, df, cfg)
         if result and result["score"] >= args.min_score:
+            info = stock_info.get(code, {})
+            result["name"] = info.get("name", "")
+            result["industry"] = info.get("industry", "")
             results.append(result)
 
     # 排序
