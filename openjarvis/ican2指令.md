@@ -1,36 +1,67 @@
-# 一、增加定时任务（调仓）
-创建定时任务每日8点【全球市场简报】获取并生成全球市场分析报告
+# 一、增加定时任务（超短形态选股）
+创建定时任务：工作日 19:10 自动执行【超短趋势扫描】，筛选明日10只备选标的。
+```
+【超短形态扫描任务】工作日 19:10 执行
 
-【全球市场简报-每日8点】获取并生成全球市场分析报告：
-1. 获取关键人物新闻（Sam Altman, Greg Brockman, Elon Musk, Donald Trump, Sundar Pichai, Tim Cook, Jensen Huang, Jerome Powell, Mark Zuckerberg），每人最新2篇
-2. 获取美股核心标的实时行情：AAPL GOOGL AMZN NVDA META TSLA COHR MU WDC MSFT
-3. 综合所有新闻和行情数据，生成结构化分析报告（包含关键人物动态、美股行情、板块影响评估5级评分、综合建议）
-4. 将报告保存到工作区下的reports/global-market-brief-YYYY-MM-DD.md
-报告格式要求：中文输出，包含AI/大模型、半导体/芯片、云计算/SaaS、消费电子、新能源/电动车、存储/HBM、社交/广告、宏观/利率等板块的影响评估
+1. 调用 `uptrend-scanner` 技能：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/uptrend-scanner/scripts/scan_uptrend.py --date today --out /root/.nanobot/workspace/uptrend_picks/ --top 10
+2. 技术验证：检查产生的 `picks_YYYYMMDD.json` 是否包含具备 MA5/MA10/MA20 多头排列的强势股。
+3. 日志记录：保存分析结果至 `/root/.nanobot/workspace/trading_log/uptrend_scan_YYYYMMDD.md`。
+```
 
+# 二、增加定时任务（超短线波段策略）
+创建定时任务：工作日 9:40, 10:30, 13:30, 14:40 自动执行【超短线波段】持仓滚动评估与新仓位介入。
 
-# 二、增加定时任务（调仓）
-创建雪球模拟盘做T策略定时任务 9:45 10:15 10:45 11:15 13:45 14:15 14:45
+【雪球超短波段策略】作业流程：
+1. **日内监控与评估 (Intraday Monitoring)**：
+   - 在 9:40, 10:30, 13:30 重点执行持仓监控，检查是否触发基础止损（-5%）或止盈（3%）。
+   - 在 14:40 作为核心决策点，除止损止盈外，从 `uptrend_picks` 中筛选新标的。
+2. **备选调取 (High-Velocity Picks)**：
+   - 读取 `uptrend_picks/picks_YYYYMMDD.json` (或前一交易日 Picks)。
+3. **共振审查 (Expert Synthesis)**：
+   - 调用 `investment-decision` 对标的进行多专家合议，优先选择“BUY/ACCUMULATE”评级且资金流向为正的标的。
+4. **持仓滚动审计 (Portfolio Review)**：
+   - **超短时间止损 (Time Stop)**：识别持仓满 **2 个交易日**且浮动盈亏在 [-1%, +1%]（无波动/弱势）的标的，强制释放流动性。
+   - **硬性止损 (Stop Loss)**：有效跌破 MA20 或浮亏达到 -5% 时无条件离场。
+5. **获利退出 (Take Profit)**：
+   - **分步止盈**：单票盈利达 3%-5% 时执行减仓（锁利 50%）。
+   - **动能衰竭**：若股价偏离五日线过远或 RSI > 80，实行动态止盈。
+6. **执行操作 (Execution)**：
+   - 使用 `snowball-trading` 执行 `buy/sell/adjust`。
+   - **仓位管理**：单票上限 10%，总仓位严格对齐 75% 红线。
+7. **归档记录**：记录分析及损益预设至 `/root/.nanobot/workspace/trading_log/ultra_short_YYYYMMDD.md`。
 
-【雪球做T策略】执行任务：
-1. 读取今天的全球市场简报报告（/root/.nanobot/workspace/reports/global-market-brief-YYYYMMDD.md）作为今日基调
-2. 执行做T策略扫描：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/intraday-t-trading/scripts/t_trading_scanner.py --json
-3. 结合全球市场简报和扫描结果，生成做T策略报告（包含正T/倒T信号、风险提示、仓位建议），保存到/root/.nanobot/workspace/t_trading_report/t_trading_report-YYYYMMDD-hhmm.md
-4. 根据做T策略报告中的LONG/SHORT信号，在雪球模拟盘上执行相应做T操作（使用snowball-trading skill的adjust/buy/sell命令）
-5. 严格遵守做T策略报告中的时间窗口：
-### 盘中时间窗口
-| 时间段 | 操作 | 说明 |
-|-------|------|------|
-| 9:30-10:00 | 观察 | 避免开盘波动 |
-| 10:00-10:30 | 正T/倒T | 第一黄金窗口 |
-| 10:30-13:30 | 观察 | 少操作 |
-| 13:30-14:00 | 正T/倒T | 第二黄金窗口 |
-| 14:00-14:30 | 减仓 | 逐步降低仓位 |
-| 14:30后 | 禁止新开 | 只平仓 |
-## 快速口诀
-**正T**: J值25下缩量买，下轨附近入两点卖，一点五止损纪律牢
-**倒T**: J值80上放量卖，两点买回不追高，突破两放弃现金王
-**停手**: 大盘跌超2%全停，个股跌停不碰，连错三把先冷静，尾盘半小时不新开
-6. 保存操作日志到 /root/.nanobot/workspace/trading_log/t_trading_YYYYMMDD-hhmm.md
+# 三、增加定时任务（复盘）
+创建定时任务：工作日17点自动雪球持仓复盘，分析持仓情况，今天交易操作，明天预期判断和风险，复盘结果记录到工作区daily_review文件夹以md文件保存，同时发送到飞书
+```
+执行雪球持仓复盘任务：
+1) 查询雪球持仓和资金情况；
+2) 分析持仓盈亏、行业分布；
+3) 回顾今日交易操作；
+4) 结合市场情况判断明天预期和风险；
+5) 将复盘报告保存到 /root/.nanobot/workspace/daily_review/daily_review_YYYYMMDD.md；
+6) 发送复盘结果到飞书
+```
 
+# 四、增加定时任务（K线数据）
+创建定时任务：工作日19点自动更新今天A股K线数据
+```
+【自动更新A股K线数据】获取今日收盘数据
 
+任务步骤：
+1. 执行K线数据获取脚本，增量更新今日数据：
+   - 运行：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/fetch-kline/scripts/fetch_kline.py --start today --end today --out /root/.nanobot/workspace/kline_data
+   - 优先使用Tushare API（如已配置TUSHARE_TOKEN）
+   - 无token时自动降级使用AKShare（免费）
+2. 记录更新日志到 /root/.nanobot/workspace/trading_log/kline_update_YYYYMMDD.md：
+   - 更新时间和数据来源（Tushare/AKShare）
+   - 更新的股票数量
+   - 任何错误或异常情况
+3. 验证数据完整性：
+   - 检查今日数据是否成功写入
+   - 确保CSV文件格式正确
+
+注意：
+- A股收盘时间为15:00，19点执行可确保数据已同步
+- 使用增量更新（today模式）避免重复下载历史数据
+- 数据保存在 workspace/kline_data 目录
+```

@@ -25,3 +25,5 @@ nano.*.save
 uv.lock
 *.env1
 *.env2
+*.nanobot 
+*.nanobot2

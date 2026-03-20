@@ -1,0 +1,71 @@
+# 一、增加定时任务（调仓）
+创建定时任务每日8点【全球市场简报】获取并生成全球市场分析报告
+
+【全球市场简报-每日8点】获取并生成全球市场分析报告：
+1. 获取关键人物新闻（Sam Altman, Greg Brockman, Elon Musk, Donald Trump, Sundar Pichai, Tim Cook, Jensen Huang, Jerome Powell, Mark Zuckerberg），每人最新2篇
+2. 获取美股核心标的实时行情：AAPL GOOGL AMZN NVDA META TSLA COHR MU WDC MSFT
+3. 综合所有新闻和行情数据，生成结构化分析报告（包含关键人物动态、美股行情、板块影响评估5级评分、综合建议）
+4. 将报告保存到工作区下的reports/global-market-brief-YYYY-MM-DD.md
+报告格式要求：中文输出，包含AI/大模型、半导体/芯片、云计算/SaaS、消费电子、新能源/电动车、存储/HBM、社交/广告、宏观/利率等板块的影响评估
+
+
+# 二、增加定时任务（调仓）
+创建雪球模拟盘做T策略定时任务 9:45 10:15 10:45 11:15 13:45 14:15 14:45
+
+【雪球做T策略】执行任务：
+1. 读取今天的全球市场简报报告（/root/.nanobot/workspace/reports/global-market-brief-YYYYMMDD.md）作为今日基调
+2. 执行做T策略扫描：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/intraday-t-trading/scripts/t_trading_scanner.py --json
+3. 结合全球市场简报和扫描结果，生成做T策略报告（包含正T/倒T信号、风险提示、仓位建议），保存到/root/.nanobot/workspace/t_trading_report/t_trading_report-YYYYMMDD-hhmm.md
+4. 根据做T策略报告中的LONG/SHORT信号，在雪球模拟盘上执行相应做T操作（使用snowball-trading skill的adjust/buy/sell命令）
+5. 严格遵守做T策略报告中的时间窗口：
+### 盘中时间窗口
+| 时间段 | 操作 | 说明 |
+|-------|------|------|
+| 9:30-10:00 | 观察 | 避免开盘波动 |
+| 10:00-10:30 | 正T/倒T | 第一黄金窗口 |
+| 10:30-13:30 | 观察 | 少操作 |
+| 13:30-14:00 | 正T/倒T | 第二黄金窗口 |
+| 14:00-14:30 | 减仓 | 逐步降低仓位 |
+| 14:30后 | 禁止新开 | 只平仓 |
+## 快速口诀
+**正T**: J值25下缩量买，下轨附近入两点卖，一点五止损纪律牢
+**倒T**: J值80上放量卖，两点买回不追高，突破两放弃现金王
+**停手**: 大盘跌超2%全停，个股跌停不碰，连错三把先冷静，尾盘半小时不新开
+6. 保存操作日志到 /root/.nanobot/workspace/trading_log/t_trading_YYYYMMDD-hhmm.md
+
+
+# 三、增加定时任务（复盘）
+创建定时任务：工作日17点自动雪球持仓复盘，分析持仓情况，今天交易操作，明天预期判断和风险，复盘结果记录到工作区daily_review文件夹以md文件保存，同时发送到飞书
+```
+执行雪球持仓复盘任务：
+1) 查询雪球持仓和资金情况；
+2) 分析持仓盈亏、行业分布；
+3) 回顾今日交易操作；
+4) 结合市场情况判断明天预期和风险；
+5) 将复盘报告保存到 /root/.nanobot/workspace/daily_review/daily_review_YYYYMMDD.md；
+6) 发送复盘结果到飞书
+```
+
+# 四、增加定时任务（K线数据）
+创建定时任务：工作日18:30点自动更新今天A股K线数据
+```
+【自动更新A股K线数据】获取今日收盘数据
+
+任务步骤：
+1. 执行K线数据获取脚本，增量更新今日数据：
+   - 运行：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/fetch-kline/scripts/fetch_kline.py --start today --end today --out /root/.nanobot/workspace/kline_data
+   - 优先使用Tushare API（如已配置TUSHARE_TOKEN）
+   - 无token时自动降级使用AKShare（免费）
+2. 记录更新日志到 /root/.nanobot/workspace/trading_log/kline_update_YYYYMMDD.md：
+   - 更新时间和数据来源（Tushare/AKShare）
+   - 更新的股票数量
+   - 任何错误或异常情况
+3. 验证数据完整性：
+   - 检查今日数据是否成功写入
+   - 确保CSV文件格式正确
+
+注意：
+- A股收盘时间为15:00，18:30执行可确保数据已同步
+- 使用增量更新（today模式）避免重复下载历史数据
+- 数据保存在 workspace/kline_data 目录
+```
