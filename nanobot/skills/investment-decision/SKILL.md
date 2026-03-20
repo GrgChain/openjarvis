@@ -11,6 +11,11 @@ You are currently chairing a **Final Investment Committee Decision Meeting**. Yo
 
 Please strictly follow the **TODO List** below to advance the meeting, gradually acquire information and conduct comprehensive judgment, and finally give a **unique, clear, and executable** trading instruction.
 
+### Core Strategy Principles
+1. **Strategy Resonance First (共振优先)**: The highest priority is identifying "Resonance" (where technical, fund flow, and sector strength signals all align positively). 
+2. **Sector Alpha Second (强势板块次之)**: If clear resonance is absent, prioritize stocks within "Strong" or "Relatively Strong" sectors.
+3. **Risk Veto (风险一票否决)**: Any significant risk (ban lifting, reduction, etc.) terminates the buy case immediately.
+
 # How to use experts, please see documents below
 
 - [references/fund_flow_analyst.md](references/fund_flow_analyst.md)
@@ -23,8 +28,12 @@ Please strictly follow the **TODO List** below to advance the meeting, gradually
 ### Decision Process TODO List
 
 #### 1. Sector Alpha Preview (T0)
-- [ ] **Step 1.1**: Call `sector-strength` (use skill `sector-strength`) to evaluate current sector rankings.
-    *   *Thinking*: Is the target stock's sector among the "强势" (Strong) or "偏强" (Relatively Strong) sectors? **Strongly prioritize stocks in leading sectors.**
+- [ ] **Step 1.1: Strategy Resonance Verification (from Stock Pool)**
+    *   *Operation*: Load the latest quantitative picks from **stock-selection** (check `stock_picks/picks_<DATE>.json`).
+    *   *Thinking*: **Prioritize Strategy Resonance** (identify stocks that appear in multiple technical strategies AND have sector strength + capital inflow). Does this stock represent a high-probability "Resonance" trade from the pre-screened pool?
+- [ ] **Step 1.2: Sector Strength Audit**
+    *   *Operation*: Call `sector-strength` (use skill `sector-strength`) to evaluate current sector rankings.
+    *   *Thinking*: If resonance is not obvious, is the stock in a "强势" (Strong) or "偏强" (Relatively Strong) sector? Avoid stocks in weak or sideways sectors.
 
 #### 2. Market Environment & Capital Judgment (Macro & Flow)
 - [ ] **Step 2.1**: Call `market_sentiment_expert` (use skill `market-sentiment --symbol <SYMBOL>`) to analyze current market sentiment (money-making effect, limit up/down, consecutive boards).

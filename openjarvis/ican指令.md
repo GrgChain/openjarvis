@@ -1,97 +1,49 @@
-创建定时任务：工作日9点45分上午自动分析当前雪球持仓并调仓：关注高开的股票，获利很多可减仓实现部分获利，但不执行买入操作，把操作日志记录到工作区trading_log文件夹以md文件保存
+# 一、增加核心交易经验记忆
+
+🚨 **核心铁律：永不满仓 (NEVER FULL POSITION)**
+为了应对系统性风险并保持调仓灵活性，必须严格遵守以下资金约束：
+
+#### 1. 仓位硬限制 (Position Limits)
+- **总仓位上限**：75% (目标上限)。必须保留至少 25% 的现金。
+- **单票持仓上限**：10%。禁止单票重仓，实现风险分散。
+- **禁买隔离带**：当股票总仓位超过 80% 时，**绝对禁止**任何新买入，只允许卖出或减仓。
+
+#### 2. 强制性减仓机制 (Liquidity Guard)
+- **流动性警戒**：若现金比例低于 20%，**禁止所有买入**，且必须执行减仓逻辑。优先裁撤：弱势股、无主力资金关注股、已破位个股，直至现金回升至 25% 以上。
+
+#### 3. 止盈止损纪律 (Exit Strategy)
+- **坚决止损**：跌破关键技术位或达到默认止损线 (-5%~-8%) 必须离场。绝不扛单，绝不为由于判断失误买单。
+- **动态止盈**：达到目标预期或向上动能衰减时，采用分批止盈法（先撤 50%）。利用移动止盈保护既得利润。
+
+#### 4. 持仓周期管理 (Cycle Management)
+- **短线律动**：单票持仓原则上**不超过 5 个交易日**。
+- **时间止损/止盈**：若持仓满 5 天且未触发止盈止损，除非个股处于极强势的主升浪中且均线多头排列，否则必须执行调仓或由实盘确认强制平仓，以维持资金周转率和换手效率。
+
+
+# 二、增加定时任务（调仓）
+
+创建定时任务：根据【核心交易经验】在工作日9:50, 10:30, 13:50, 14:30 自动执行雪球动态调仓
 ```
-【雪球自动调仓任务-9点45分】分析持仓并执行获利减仓
+【雪球动态调仓任务】工作日 9:50, 10:30, 13:50, 14:30
+
+任务目标：基于实盘持仓，严格对齐【核心交易经验】铁律，执行精细化的止盈止损与换仓买入。
 
 任务步骤：
-1. 查询雪球当前持仓（使用snowball-trading skill的position命令）
-2. 获取持仓股票的实时行情，识别高开股票（涨幅>3%视为高开）
-3. 分析各持仓股票的获利情况：
-   - 计算每只持仓股票的浮动盈亏比例
-   - 获利超过5%的股票视为"获利很多"
-4. 执行调仓策略（仅减仓，不买入）：
-   - 对于获利很多且高开的股票，减仓50%实现部分获利
-   - 使用adjust命令将目标仓位权重降低
-5. 记录操作日志到 /root/.nanobot/workspace/trading_log/YYYY-MM-DD.md 文件，包含：
-   - 任务执行时间
-   - 持仓分析结果
-   - 高开股票列表
-   - 执行的操作详情
-   - 调仓后的持仓状态
+1. **持仓状态检索**：查询 `snowball-trading` 的 `position` 与 `balance`。
+2. **规则边界核实**：根据【核心交易经验】第 1、2 条规则：
+   - 核对总仓位是否超过 80%（硬禁买）或现金是否低于 20%（硬性减仓计划优先）。
+3. **决策生成与执行**：
+   - **止盈止损**：按第 3 条规则检查盈亏，达到 -5%~-8% 止损或动力衰竭即分批退出。
+   - **换仓介入**：若满足仓位余地，按昨日 20:00 的 `investment_decision.json` 介入新股。
+   - **持仓周期管理**：按第 4 条规则识别满 5 日的非极强势标的，强制释放流动性。
+4. **归档记录**：将所有 `buy/sell/adjust` 及分析逻辑存入 `/root/.nanobot/workspace/trading_log/dynamic_trade_YYYYMMDD.md`。
 
 注意事项：
-- 雪球是T+1交易，注意今日买入的股票不能卖出
-- 只执行减仓操作，不执行任何买入
-- 确保日志文件以markdown格式保存
+- 绝对禁止满仓（25% 现金线为红线）。
+- 14:30 任务作为末路检查点，必须清理非强势的陈旧仓位。
 ```
 
-创建定时任务：工作日10点50分上午自动分析当前雪球持仓并调仓：检查持仓股票风险，卖出不利持仓，买入新的昨天推荐股票，把操作日志记录到工作区trading_log文件夹以md文件保存
-```
-【雪球自动调仓任务-10点50分】风险检查与买入推荐股票
-
-任务步骤：
-1. 查询雪球当前持仓（使用snowball-trading skill的position和balance命令）
-2. 检查持仓股票风险（使用risk-assessment skill）：
-   - 查询每只持仓股票的限售解禁、大股东减持、重要事件
-   - 识别风险较高的持仓（如有重大利空、减持计划等）
-3. 卖出不利持仓：
-   - 对风险较高的股票，使用adjust命令减仓或清仓（设置weight为0）
-   - 优先卖出有风险预警的股票
-4. 买入昨日投资决策股票：
-   - 读取 /root/.nanobot/workspace/decisions/investment_decision_<上个交易日日期>.json
-   - 获取昨日推荐的优质股票列表
-   - 计算可用资金，平均分配买入推荐股票（或使用指定权重）
-   - 使用buy命令买入，价格设为市价或略低于当前价
-5. 记录操作日志到 /root/.nanobot/workspace/trading_log/morning_trade_YYYY-MM-DD.md：
-   - 任务执行时间和市场概况
-   - 持仓风险检查结果（有风险的股票列表）
-   - 卖出的操作详情（股票代码、数量、原因）
-   - 买入的操作详情（股票代码、数量、价格）
-   - 调仓前后的持仓对比
-   - 账户资金变化
-
-注意事项：
-- 雪球是T+1交易，今日买入的股票次日才能卖出
-- 卖出操作优先于买入，确保有足够资金
-- 如果昨日没有推荐股票文件，则跳过买入步骤
-- 确保日志文件以markdown格式保存，便于查阅
-
-```
-
-创建定时任务：工作日14点30分中午自动分析当前雪球持仓并调仓：检查持仓股票风险，卖出不利持仓，买入新的昨天推荐股票，把操作日志记录到工作区trading_log文件夹以md文件保存
-```
-【雪球自动调仓任务-14点30分】风险检查与买入推荐股票
-
-任务步骤：
-1. 查询雪球当前持仓（使用snowball-trading skill的position和balance命令）
-2. 检查持仓股票风险（使用risk-assessment skill）：
-   - 查询每只持仓股票的限售解禁、大股东减持、重要事件
-   - 识别风险较高的持仓（如有重大利空、减持计划、解禁等）
-3. 卖出不利持仓：
-   - 对风险较高的股票，使用adjust命令清仓（设置weight为0）
-   - 对当日表现异常（如大跌超过5%）的股票，考虑清仓止损
-4. 买入昨日投资决策股票：
-   - 读取 /root/.nanobot/workspace/decisions/investment_decision_<上个交易日日期>.json
-   - 获取昨日推荐的优质股票列表
-   - 计算可用资金，平均分配买入推荐股票
-   - 使用buy命令买入，价格设为市价或根据推荐价格
-5. 记录操作日志到 /root/.nanobot/workspace/trading_log/afternoon_trade_YYYY-MM-DD.md：
-   - 任务执行时间和市场概况
-   - 持仓风险检查结果（有风险的股票列表及原因）
-   - 卖出的操作详情（股票代码、数量、卖出原因）
-   - 买入的操作详情（股票代码、数量、价格）
-   - 调仓前后的持仓对比
-   - 账户资金变化和收益率
-
-注意事项：
-- 雪球是T+1交易，今日买入的股票次日才能卖出
-- 卖出操作优先于买入，确保有足够资金
-- 如果昨日没有推荐股票文件，则跳过买入步骤
-- 14:30接近收盘，交易决策需谨慎
-- 确保日志文件以markdown格式保存
-```
-
-
-
+# 三、增加定时任务（复盘）
 创建定时任务：工作日17点自动雪球持仓复盘，分析持仓情况，今天交易操作，明天预期判断和风险，复盘结果记录到工作区daily_review文件夹以md文件保存，同时发送到飞书
 ```
 执行雪球持仓复盘任务：
@@ -99,10 +51,11 @@
 2) 分析持仓盈亏、行业分布；
 3) 回顾今日交易操作；
 4) 结合市场情况判断明天预期和风险；
-5) 将复盘报告保存到 /root/.nanobot/workspace/daily_review/daily_review_YYYY-MM-DD.md；
+5) 将复盘报告保存到 /root/.nanobot/workspace/daily_review/daily_review_YYYYMMDD.md；
 6) 发送复盘结果到飞书
 ```
 
+# 四、增加定时任务（K线数据）
 创建定时任务：工作日18点自动更新今天A股K线数据
 ```
 【自动更新A股K线数据】获取今日收盘数据
@@ -112,7 +65,7 @@
    - 运行：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/fetch-kline/scripts/fetch_kline.py --start today --end today --out /root/.nanobot/workspace/kline_data
    - 优先使用Tushare API（如已配置TUSHARE_TOKEN）
    - 无token时自动降级使用AKShare（免费）
-2. 记录更新日志到 /root/.nanobot/workspace/trading_log/kline_update_YYYY-MM-DD.md：
+2. 记录更新日志到 /root/.nanobot/workspace/trading_log/kline_update_YYYYMMDD.md：
    - 更新时间和数据来源（Tushare/AKShare）
    - 更新的股票数量
    - 任何错误或异常情况
@@ -126,6 +79,7 @@
 - 数据保存在 workspace/kline_data 目录
 ```
 
+# 五、增加定时任务（选股）
 创建定时任务：工作日19点自动执行今天量化策略选股，生成今日推荐股票
 ```
 【量化策略选股】生成今日推荐股票
@@ -138,7 +92,7 @@
 2. 验证选股结果：
    - 检查输出文件 /root/.nanobot/workspace/stock_picks/picks_今天日期.json 是否生成
    - 统计各策略选出的股票数量
-3. 记录选股日志到 /root/.nanobot/workspace/trading_log/stock_selection_YYYY-MM-DD.md：
+3. 记录选股日志到 /root/.nanobot/workspace/trading_log/stock_selection_YYYYMMDD.md：
    - 选股执行时间和数据日期
    - 各策略选股结果统计
    - 推荐股票代码列表
@@ -153,50 +107,32 @@
 - JSON文件格式：{"策略名": ["股票代码1", "股票代码2", ...]}
 ```
 
-创建定时任务：工作日20点自动分析今日选股结果，生成至少20只强势板块的股票投资决策分析
+# 六、增加定时任务（投资决策分析）
+创建定时任务：工作日 20:00 自动基于【共振策略】进行量化选股聚合，生成至少 20 只股票的深度投资分析报告。
 ```
-【投资决策分析】强势板块选股深度分析
+【共振策略-深度投资决策】工作日 20:00 执行
+
+任务目标：从当日强势板块中，优先寻找与量化技术面信号共振的个股，并执行全维度多专家分析。
 
 任务步骤：
-
-**第一步：强势板块分析**
-- 运行：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/sector-strength/scripts/score_sectors.py --top 20 --min-score 60
-- 获取当日强势板块排名（>=75分强势，60-74分偏强）
-- 输出保存到：/root/.nanobot/workspace/sector/sector_strength_YYYYMMDD.json
-
-**第二步：量化选股扫描**
-- 运行：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/stock-selection/scripts/select_stock.py --date today --out stock_picks
-- 获取技术面选股结果（BBI、KDJ、MA60、放量等策略）
-- 输出保存到：/root/.nanobot/workspace/stock_picks/picks_YYYYMMDD.json
-
-**第三步：筛选强势板块股票池（至少20只）**
-- 从选股结果中筛选属于强势板块的股票
-- 如果数量不足20只，扩大至偏强板块或增加技术面选股范围
-- 生成候选股票列表（至少20只）
-
-**第四步：深度投资决策分析（对每只股票）**
-对每个候选股票调用多专家分析：
-1. risk-assessment - 风险检查（解禁、减持、重大事件）
-2. quarterly-report - 基本面分析（业绩增长、估值PE/PB）
-3. news-sentiment - 消息面分析（利好/利空、市场关注度）
-4. fund-flow - 资金流向分析（主力进出、吸筹/派发）
-5. technical-analysis-calculator - 技术面分析（趋势、动量、支撑压力）
-6. market-sentiment - 市场情绪分析（赚钱效应、涨跌停、连板）
-
-**第五步：综合投资决策**
-- 模拟多空辩论，综合六大专家观点
-- 作为CIO做出最终决策：BUY/ACCUMULATE/HOLD/REDUCE/SELL
-- 生成投资评级、置信度、操作建议、目标价、止损位
-
-**第六步：输出结果**
-- 投资决策JSON：/root/.nanobot/workspace/decisions/investment_decision_YYYYMMDD.json
-- 分析日志：/root/.nanobot/workspace/trading_log/investment_analysis_YYYYMMDD.md
-- 包含：选股列表、板块分析、各股决策详情、风险提示
+1. **强势板块初筛 (Sector Alpha)**：
+   - 调用 `sector-strength` 获取当日排名（过滤分数 >= 60 的板块，保存至 `workspace/sector/`）。
+2. **量化技术扫描 (Quantitative Scanning)**：
+   - 调用 `stock-selection` 对全部 A 股进行扫描（KDJ/BBI/放量等，生成 `picks_YYYYMMDD.json`）。
+3. **共振标的库筛选 (Resonance Filtering)**：
+   - 获取 `stock_picks` 中属于上述强势/偏强板块的股票，确保候选库至少 20 只。
+   - 若中心共振标的数量不足，则按行业强度顺序补齐。
+4. **全专家深度决策 (Expert Synthesis)**：
+   - 对筛选出的个股逐一执行 `investment-decision` 技能。
+   - **核心审查**：严格执行 `risk-assessment` 一票否决。
+   - **共振研判**：综合基本面、消息面、资金流向及技术位，寻找确定性最高的买点。
+5. **策略结果持久化 (Persistence)**：
+   - 决策阵列：`/root/.nanobot/workspace/decisions/investment_decision_YYYYMMDD.json`
+   - 分析详志：`/root/.nanobot/workspace/trading_log/investment_analysis_YYYYMMDD.md`
 
 注意事项：
-- 确保TUSHARE_TOKEN已配置（提升数据质量）
-- 如遇到高风险股票（解禁/减持），直接否决
-- 优先选择强势板块+资金流入+技术突破的股票
-- 日志记录完整的分析过程和决策依据
+- 决策权重：**综合共振 > 行业强度 > 单一技术指标**。
+- 必须包含：目标价、入场区间、止损位及基于【核心交易经验】的调仓建议。
 ```
+
 
