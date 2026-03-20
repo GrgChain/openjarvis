@@ -1,7 +1,7 @@
 # 一、增加定时任务（超短形态选股）
-创建定时任务：工作日 19:10 自动执行【超短趋势扫描】，筛选明日10只备选标的。
+创建定时任务：工作日 8:10 自动执行【超短趋势扫描】，筛选明日10只备选标的。
 ```
-【超短形态扫描任务】工作日 19:10 执行
+【超短形态扫描任务】工作日 8:10 执行
 
 1. 调用 `uptrend-scanner` 技能：python3 /usr/local/lib/python3.12/site-packages/nanobot/skills/uptrend-scanner/scripts/scan_uptrend.py --date today --out /root/.nanobot/workspace/uptrend_picks/ --top 10
 2. 技术验证：检查产生的 `picks_YYYYMMDD.json` 是否包含具备 MA5/MA10/MA20 多头排列的强势股。
@@ -16,7 +16,7 @@
    - 在 9:40, 10:30, 13:30 重点执行持仓监控，检查是否触发基础止损（-5%）或止盈（3%）。
    - 在 14:40 作为核心决策点，除止损止盈外，从 `uptrend_picks` 中筛选新标的。
 2. **备选调取 (High-Velocity Picks)**：
-   - 读取 `uptrend_picks/picks_YYYYMMDD.json` (或前一交易日 Picks)。
+   - 读取 `uptrend_picks/picks_YYYYMMDD.json` (今日交易日 Picks)。
 3. **共振审查 (Expert Synthesis)**：
    - 调用 `investment-decision` 对标的进行多专家合议，优先选择“BUY/ACCUMULATE”评级且资金流向为正的标的。
 4. **持仓滚动审计 (Portfolio Review)**：
