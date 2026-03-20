@@ -1,24 +1,28 @@
 x-common-config: &common-config
   image: openjarvis:latest
-  volumes:
-    - ~/.nanobot:/root/.nanobot
-  env_file:
-    - .env
+  restart: unless-stopped
 
 services:
   openjarvis-server:
     container_name: openjarvis-server
     <<: *common-config
+    volumes:
+      - ./.nanobot:/root/.nanobot
+    env_file:
+      - .env1
     command: [ "server" ]
-    restart: unless-stopped
     ports:
       - 18790:18790
       - 4096:4096
 
-  openjarvis-cli:
+  openjarvis-server2:
+    container_name: openjarvis-server2
     <<: *common-config
-    profiles:
-      - cli
-    command: [ "status" ]
-    stdin_open: true
-    tty: true
+    volumes:
+      - ./.nanobot2:/root/.nanobot
+    env_file:
+      - .env2
+    command: [ "server" ]
+    ports:
+      - 18791:18790
+      - 4097:4096
