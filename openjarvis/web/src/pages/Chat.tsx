@@ -10,6 +10,7 @@ import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Plus, Trash2 } from "lucide-react";
 import { cn, formatDate } from "../lib/utils";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { CHANNEL_ICONS } from "../lib/channelIcons";
 
@@ -25,6 +26,8 @@ export default function Chat() {
   const { data: sessions } = useSessions();
   const { data: sessionMsgs, isSuccess: historyLoaded } = useSessionMessages(currentSessionKey ?? "");
   const deleteSession = useDeleteSession();
+  const navigate = useNavigate();
+  const { sessionKey: urlSessionKey } = useParams();
   const loadedKeyRef = useRef<string | null>(null);
   const loadedCountRef = useRef<number>(0);
   // Track the exact message objects written to the store by the last setMessages call.
@@ -126,16 +129,33 @@ export default function Chat() {
     [isAdmin, myPrefix, sessions]
   );
 
-  // Auto-select: if persisted key still exists keep it; otherwise fall back to first session.
-  // IMPORTANT: a newly created local session key (starts with myPrefix) won't exist in
-  // mySessions yet (the server only records it on first message), so don't redirect away from it.
+  // Sync URL session key to store
   useEffect(() => {
-    if (mySessions.length === 0) return;
-    const keyExists = currentSessionKey && mySessions.some((s) => s.key === currentSessionKey);
-    if (!keyExists && !currentSessionKey?.startsWith(myPrefix)) {
-      setCurrentSession(mySessions[0].key);
+    if (urlSessionKey && urlSessionKey !== currentSessionKey) {
+      setCurrentSession(urlSessionKey);
     }
-  }, [mySessions, currentSessionKey, setCurrentSession, myPrefix]);
+  }, [urlSessionKey, currentSessionKey, setCurrentSession]);
+
+  // Handle auto-select when visiting /chat without a session key
+  useEffect(() => {
+    if (urlSessionKey) return;
+    
+    // If the store already has an active session, validate and use it
+    if (currentSessionKey) {
+      const keyExists = mySessions.some((s) => s.key === currentSessionKey);
+      if (keyExists || currentSessionKey.startsWith(myPrefix)) {
+        navigate(`/chat/${encodeURIComponent(currentSessionKey)}`, { replace: true });
+        return;
+      }
+    }
+
+    if (mySessions.length === 0) return;
+    
+    // Fall back to the most recent available session
+    const targetKey = mySessions[0].key;
+    setCurrentSession(targetKey);
+    navigate(`/chat/${encodeURIComponent(targetKey)}`, { replace: true });
+  }, [urlSessionKey, currentSessionKey, mySessions, navigate, setCurrentSession, myPrefix]);
 
   // If the current key is a locally-created session (not yet persisted on server),
   // prepend it to the sidebar list so the user sees it immediately after clicking "+".
@@ -157,10 +177,12 @@ export default function Chat() {
     loadedKeyRef.current = key; // mark as loaded with 0 messages so effect skips empty session
     loadedCountRef.current = 0;
     setCurrentSession(key);
+    navigate(`/chat/${encodeURIComponent(key)}`);
   };
 
   const switchSession = (key: string) => {
     setCurrentSession(key); // clears messages in store
+    navigate(`/chat/${encodeURIComponent(key)}`);
   };
 
   return (
