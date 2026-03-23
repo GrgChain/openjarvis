@@ -181,11 +181,12 @@ async def ws_chat(websocket: WebSocket) -> None:
 
     # Determine session key
     requested_key: str | None = websocket.query_params.get("session")
-    session_key = (
-        requested_key
-        if requested_key and requested_key.startswith(f"web:{user['id']}")
-        else f"web:{user['id']}:{uuid.uuid4().hex[:8]}"
-    )
+    is_admin = user.get("role") == "admin"
+
+    if requested_key and (is_admin or requested_key.startswith(f"web:{user['id']}")):
+        session_key = requested_key
+    else:
+        session_key = f"web:{user['id']}:{uuid.uuid4().hex[:8]}"
     await websocket.send_json({"type": "session_info", "session_key": session_key})
 
     # Background task: forward messages from conn_q to the WebSocket
@@ -224,7 +225,8 @@ async def ws_chat(websocket: WebSocket) -> None:
             elif msg_type == "message":
                 content = raw.get("content", "").strip()
                 msg_session_key = raw.get("session_key")
-                if msg_session_key and msg_session_key.startswith(f"web:{user['id']}"):
+                is_admin = user.get("role") == "admin"
+                if msg_session_key and (is_admin or msg_session_key.startswith(f"web:{user['id']}")):
                     if msg_session_key != session_key:
                         session_key = msg_session_key
                         await websocket.send_json({"type": "session_info", "session_key": session_key})
