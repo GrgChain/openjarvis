@@ -232,12 +232,19 @@ def _patch_responses_api_fallback() -> None:
         async def _patched_chat(self, messages, tools=None, model=None,
                                 max_tokens=4096, temperature=0.7, reasoning_effort=None,
                                 tool_choice=None):
+            actual_model = model or getattr(self, "default_model", "")
+            spec = getattr(self, "_spec", None)
+            # Replicate LiteLLM's automatic prefix stripping for standard providers
+            # Gateways typically need the prefix (unless their spec says otherwise)
+            if spec and not spec.is_gateway and actual_model and "/" in actual_model:
+                actual_model = actual_model.split("/")[-1]
+
             # Fast path: already confirmed this base needs Responses API.
             if self.api_base in _responses_api_bases:
-                return await _call_responses_api(self, messages, tools, model, max_tokens, temperature)
+                return await _call_responses_api(self, messages, tools, actual_model, max_tokens, temperature)
 
             result: LLMResponse = await original_chat(
-                self, messages, tools, model, max_tokens, temperature, reasoning_effort,
+                self, messages, tools, actual_model, max_tokens, temperature, reasoning_effort,
                 tool_choice=tool_choice,
             )
 
@@ -245,7 +252,7 @@ def _patch_responses_api_fallback() -> None:
             if (result.finish_reason == "error" and result.content and
                     any(m in result.content.lower() for m in _LEGACY_MARKERS)):
                 _responses_api_bases.add(self.api_base)
-                return await _call_responses_api(self, messages, tools, model, max_tokens, temperature)
+                return await _call_responses_api(self, messages, tools, actual_model, max_tokens, temperature)
 
             return result
         return _patched_chat
