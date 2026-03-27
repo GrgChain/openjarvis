@@ -6,8 +6,10 @@ import json
 import re
 from pathlib import Path
 from typing import Annotated
+import zipfile
+import io
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 
 from server.api.deps import get_services, get_current_user, require_admin
 from server.api.gateway import ServiceContainer
@@ -173,3 +175,66 @@ async def toggle_skill(
 
     _save_disabled(workspace, disabled)
     return {"name": name, "enabled": enabled}
+
+
+@router.post("/upload", status_code=201)
+async def upload_skill(
+    file: Annotated[UploadFile, File()],
+    _admin: Annotated[dict, Depends(require_admin)],
+    svc: Annotated[ServiceContainer, Depends(get_services)],
+) -> dict:
+    """Upload a skill from a ZIP file."""
+    if not file.filename.endswith(".zip"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Only .zip files are allowed")
+
+    content = await file.read()
+    workspace_skills_dir = svc.config.workspace_path / "skills"
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            # Check for SKILL.md
+            infolist = zf.infolist()
+            skill_md_path = next((info.filename for info in infolist if info.filename.endswith("SKILL.md") and not info.is_dir()), None)
+
+            if not skill_md_path:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "Uploaded ZIP does not contain SKILL.md")
+
+            # Determine the skill name. If SKILL.md is inside a single root folder, use that folder name.
+            # Otherwise, use the zip filename minus .zip
+            parts = Path(skill_md_path).parts
+            if len(parts) > 1 and all(Path(info.filename).parts[0] == parts[0] for info in infolist if info.filename):
+                skill_name = parts[0]
+                has_root_dir = True
+            else:
+                skill_name = file.filename[:-4]
+                has_root_dir = False
+
+            if not skill_name:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid skill name")
+
+            target_dir = workspace_skills_dir / skill_name
+            if target_dir.exists():
+                raise HTTPException(status.HTTP_409_CONFLICT, f"Skill '{skill_name}' already exists")
+
+            target_dir.mkdir(parents=True, exist_ok=True)
+
+            # Extract files
+            for info in infolist:
+                if info.is_dir():
+                    continue
+                # If everything was wrapped in a root dir, strip it for extraction (or just preserve structure)
+                # It's safer to extract everything. The SKILL.md will be at `target_dir / (skill_md_path minus root_dir if stripped)`
+                # Let's just extract all contents inside target_dir. If there is a root dir, extract into workspace_skills_dir directly?
+                # No, if there is a root dir, it means the structure is already `skill_name/SKILL.md`.
+                # So if we extract it into `workspace_skills_dir`, it will create `workspace_skills_dir/skill_name/SKILL.md`.
+                pass
+
+            if has_root_dir:
+                zf.extractall(path=workspace_skills_dir)
+            else:
+                zf.extractall(path=target_dir)
+
+    except zipfile.BadZipFile:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid ZIP file")
+
+    return {"name": skill_name, "message": "Uploaded successfully"}

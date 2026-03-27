@@ -68,8 +68,7 @@ def _patch_responses_api_fallback() -> None:
     import json
     import uuid
     import httpx
-    from nanobot.providers.custom_provider import CustomProvider
-    from nanobot.providers.litellm_provider import LiteLLMProvider
+    from nanobot.providers.openai_compat_provider import OpenAICompatProvider
     from nanobot.providers.base import LLMResponse, ToolCallRequest
 
     # Per-process cache: set of api_base strings confirmed to need Responses API.
@@ -251,8 +250,7 @@ def _patch_responses_api_fallback() -> None:
             return result
         return _patched_chat
 
-    CustomProvider.chat = _make_patched_chat(CustomProvider.chat)      # type: ignore[method-assign]
-    LiteLLMProvider.chat = _make_patched_chat(LiteLLMProvider.chat)    # type: ignore[method-assign]
+    OpenAICompatProvider.chat = _make_patched_chat(OpenAICompatProvider.chat)      # type: ignore[method-assign]
 
 
 _apply_patches()
@@ -272,11 +270,12 @@ def _make_provider(config):
         return OpenAICodexProvider(default_model=model)
 
     if provider_name == "custom":
-        from nanobot.providers.custom_provider import CustomProvider
-        return CustomProvider(
+        from nanobot.providers.openai_compat_provider import OpenAICompatProvider
+        return OpenAICompatProvider(
             api_key=p.api_key if p else "no-key",
             api_base=config.get_api_base(model) or "http://localhost:8000/v1",
             default_model=model,
+            spec=find_by_name(provider_name),
         )
 
     if provider_name == "azure_openai":
@@ -294,7 +293,7 @@ def _make_provider(config):
                 default_model=model,
             )
 
-    from nanobot.providers.litellm_provider import LiteLLMProvider
+    from nanobot.providers.openai_compat_provider import OpenAICompatProvider
     spec = find_by_name(provider_name)
     if not model.startswith("bedrock/") and not (p and p.api_key) and not (spec and spec.is_oauth):
         print(
@@ -303,12 +302,12 @@ def _make_provider(config):
             file=sys.stderr,
         )
 
-    return LiteLLMProvider(
+    return OpenAICompatProvider(
         api_key=p.api_key if p else None,
         api_base=config.get_api_base(model),
         default_model=model,
         extra_headers=p.extra_headers if p else None,
-        provider_name=provider_name,
+        spec=spec,
     )
 
 

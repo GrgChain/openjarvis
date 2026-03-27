@@ -80,3 +80,23 @@ export function useToggleSkill() {
     },
   });
 }
+
+export function useUploadSkill() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return api.post("/skills/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }).then((r) => r.data);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["skills"] });
+      toast.success("Uploaded successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.detail || "Upload failed");
+    },
+  });
+}

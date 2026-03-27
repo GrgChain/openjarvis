@@ -224,6 +224,7 @@
     "active": "Active",
     "inactive": "Inactive",
     "add": "Add Skill",
+    "upload": "Upload ZIP",
     "edit": "Edit",
     "delete": "Delete",
     "deleteConfirm": "Are you sure you want to delete this skill?",

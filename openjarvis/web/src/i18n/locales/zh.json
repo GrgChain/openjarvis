@@ -218,6 +218,7 @@
     "active": "已启用",
     "inactive": "未启用",
     "add": "添加技能",
+    "upload": "上传 ZIP",
     "edit": "编辑",
     "delete": "删除",
     "deleteConfirm": "确定要删除此技能吗？",

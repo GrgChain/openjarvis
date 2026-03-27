@@ -7,6 +7,7 @@ import {
   useUpdateSkill,
   useDeleteSkill,
   useToggleSkill,
+  useUploadSkill,
 } from "../hooks/useSkills";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -30,7 +31,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { ConfirmDialog } from "../components/shared/ConfirmDialog";
 import { Skeleton } from "../components/ui/skeleton";
-import { Plus, Pencil, Trash2, AlertCircle, Puzzle } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Puzzle, Upload } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -55,6 +56,19 @@ function SkillEditor({
   const { data: existing } = useSkillContent(skillName && !defaultContent ? skillName : "");
 
   const finalContent = content || existing?.content || "";
+  const upload = useUploadSkill();
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      upload.mutate(file, {
+        onSuccess: () => {
+          onClose();
+        }
+      });
+      e.target.value = ""; // reset input
+    }
+  };
 
   return (
     <>
@@ -76,14 +90,40 @@ function SkillEditor({
           />
         </div>
       </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
-        <Button
-          onClick={() => onSave(name, finalContent)}
-          disabled={!name || !finalContent}
-        >
-          {t("skills.save")}
-        </Button>
+      <DialogFooter className="sm:justify-between w-full">
+        <div className="flex-1">
+          {!skillName && (
+            <>
+              <input
+                type="file"
+                id="skill-upload-dialog"
+                accept=".zip"
+                className="hidden"
+                onChange={handleUpload}
+                disabled={upload.isPending}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById("skill-upload-dialog")?.click()}
+                disabled={upload.isPending}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {t("skills.upload")}
+              </Button>
+            </>
+          )}
+        </div>
+        <div className="flex space-x-2">
+          <Button type="button" variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
+          <Button
+            type="button"
+            onClick={() => onSave(name, finalContent)}
+            disabled={!name || !finalContent}
+          >
+            {t("skills.save")}
+          </Button>
+        </div>
       </DialogFooter>
     </>
   );
@@ -96,7 +136,6 @@ export default function Skills({ hideTitle }: { hideTitle?: boolean } = {}) {
   const update = useUpdateSkill();
   const del = useDeleteSkill();
   const toggle = useToggleSkill();
-
   const [mode, setMode] = useState<"create" | "edit" | null>(null);
   const [targetName, setTargetName] = useState("");
   const [delTarget, setDelTarget] = useState("");
@@ -114,13 +153,15 @@ export default function Skills({ hideTitle }: { hideTitle?: boolean } = {}) {
     <div className="space-y-4">
       <div className={hideTitle ? "flex justify-end" : "flex items-center justify-between"}>
         {!hideTitle && <h1 className="text-2xl font-semibold">{t("skills.title")}</h1>}
-        <Button
-          size="sm"
-          onClick={() => { setTargetName(""); setMode("create"); }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {t("skills.add")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => { setTargetName(""); setMode("create"); }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t("skills.add")}
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
