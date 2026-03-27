@@ -149,6 +149,13 @@ def sell(stock_code: str, quantity: int, price: float = 0,
     return _post("/api/v1/order/sell", data, params)
 
 
+def cancel(order_id: int, account_id: str | None = None):
+    """Cancel a pending order."""
+    data = {"order_id": order_id}
+    params = {"account_id": account_id} if account_id else None
+    return _post("/api/v1/order/cancel", data, params)
+
+
 # ─── Formatters ──────────────────────────────────────────────────────────────
 
 STOCK_NAMES = {}
@@ -244,6 +251,16 @@ def fmt_trades(data: dict) -> str:
     return "\n".join(lines)
 
 
+def fmt_cancel_response(data: dict) -> str:
+    return (
+        f"【撤单结果】\n"
+        f"  账户:   {data.get('account_id', '?')}\n"
+        f"  订单ID: {data.get('order_id', '?')}\n"
+        f"  状态:   {data.get('status', '?')}\n"
+        f"  信息:   {data.get('message', '')}"
+    )
+
+
 def fmt_order_response(data: dict) -> str:
     return (
         f"【下单结果】\n"
@@ -317,6 +334,11 @@ def main():
     p.add_argument("--strategy-name", default="")
     p.add_argument("--order-remark", default="")
 
+    # cancel
+    p = sub.add_parser("cancel", help="撤销委托")
+    p.add_argument("--order-id", type=int, required=True, help="要撤销的订单ID")
+    p.add_argument("--account-id", default=None)
+
     # sell
     p = sub.add_parser("sell", help="卖出下单")
     p.add_argument("--stock-code", required=True, help="股票代码 (e.g. 600519.SH)")
@@ -353,6 +375,13 @@ def main():
         elif args.command == "history":
             result = history_trades(args.account_id, args.start_date, args.end_date)
             print(fmt_trades(result))
+
+        elif args.command == "cancel":
+            result = cancel(
+                order_id=args.order_id,
+                account_id=args.account_id,
+            )
+            print(fmt_cancel_response(result))
 
         elif args.command == "buy":
             result = buy(
