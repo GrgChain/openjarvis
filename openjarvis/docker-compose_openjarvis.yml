@@ -26,3 +26,15 @@ services:
     ports:
       - 18791:18790
       - 4097:4096
+
+  openjarvis-server3:
+    container_name: openjarvis-server3
+    <<: *common-config
+    volumes:
+      - ./.nanobot3:/root/.nanobot
+    env_file:
+      - .env3
+    command: [ "server" ]
+    ports:
+      - 18792:18790
+      - 4098:4096

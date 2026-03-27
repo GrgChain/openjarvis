@@ -23,7 +23,5 @@ botpy.log
 nano.*.save
 .DS_Store
 uv.lock
-*.env1
-*.env2
-*.nanobot 
-*.nanobot2
+*.env*
+*.nanobot*
